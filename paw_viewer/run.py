@@ -20,7 +20,6 @@ from pyglet.gl import (
 from pyglet.math import Mat4, Vec2, Vec3
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram
-import PIL.Image
 
 _vertex_source = """#version 420 core
     in vec2 position;
@@ -117,11 +116,6 @@ def create_quad(x, y, texture):
     x2 = texture.width / 2 + x
     y2 = texture.height / 2 + y
     return x1, y1, x2, y1, x2, y2, x1, y2
-
-
-def load_image():
-    image = PIL.Image.open("ds.jpg")
-    return np.array(image.convert("RGB"), dtype=np.uint8)
 
 
 class ZoomLevel:
@@ -250,13 +244,9 @@ def load_video(video_path):
     return np.array(frames), fps
 
 
-def load_demo_sequence():
-    video, fps = load_video("A:\\Dev\\pyglet.mp4")
-    print(f"Video loaded with shape: {video.shape}, FPS: {fps}")
-    return FrameSequence(video, fps)
+def show_video_array(video_array, fps: float = 30):
+    frame_sequence = FrameSequence(video_array, fps)
 
-
-def main():
     window = pyglet.window.Window(resizable=True)
     batch = pyglet.graphics.Batch()
     model = pyglet.math.Mat4()
@@ -266,7 +256,6 @@ def main():
     zoom_level = ZoomLevel()
     scroll_speed = 20  # in pixels
 
-    frame_sequence = load_demo_sequence()
     label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=batch)
 
     keys = pyglet.window.key.KeyStateHandler()
@@ -370,6 +359,12 @@ def main():
 
     window.push_handlers(keys)
     pyglet.app.run()
+
+
+def main():
+    video, fps = load_video("A:\\Dev\\pyglet.mp4")
+    print(f"Video loaded with shape: {video.shape}, FPS: {fps}")
+    show_video_array(video, fps=fps)
 
 
 if __name__ == "__main__":
