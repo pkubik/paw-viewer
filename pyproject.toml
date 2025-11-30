@@ -1,0 +1,28 @@
+[project]
+name = "paw-viewer"
+version = "0.1.0"
+description = "A simple ndarray image/video viewer"
+readme = "README.md"
+authors = [{ name = "Pawel Kubik", email = "p.kubik.pl@gmail.com" }]
+requires-python = ">=3.11"
+dependencies = ["numpy>=2.3.5", "pyglet>=2.1.11"]
+
+[dependency-groups]
+opencv = ["opencv-python>=4.11.0.86"]
+dev = [
+    {include-group = "lint"},
+    {include-group = "test"}
+]
+lint = [
+    "ruff"
+]
+test = [
+    "pytest"
+]
+
+[tool.uv]
+default-groups = ["dev", "opencv"]
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"
