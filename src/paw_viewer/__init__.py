@@ -1,2 +1,1 @@
-def hello() -> str:
-    return "Hello from paw-viewer!"
+from paw_viewer.viewer import load_video, show_video_array
