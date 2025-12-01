@@ -1,10 +1,22 @@
-from paw_viewer.viewer import load_video, show_video_array
+from paw_viewer.viewer import show_video_array
+from paw_viewer.io import auto_load_file
+import argparse
 
 
 def main():
-    video, fps = load_video("A:\\Dev\\pyglet.mp4")
+    parser = argparse.ArgumentParser(
+        description="Paw Viewer - A simple ndarray image/video viewer"
+    )
+    parser.add_argument("file", type=str, help="Path to the file")
+    parser.add_argument(
+        "--fps", type=float, default=None, help="Frames per second for video playback"
+    )
+    args = parser.parse_args()
+
+    video, fps = auto_load_file(args.file)
     print(f"Video loaded with shape: {video.shape}, FPS: {fps}")
-    show_video_array(video, fps=fps)
+
+    show_video_array(video, fps=args.fps if args.fps is not None else fps)
 
 
 if __name__ == "__main__":

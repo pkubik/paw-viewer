@@ -185,9 +185,6 @@ class FrameSequence:
         Scheduled function to update the texture content efficiently.
         """
         image = self.frames[self.frame_index]
-        image[100:200, 100:200, :] = np.random.randint(
-            0, 255, (100, 100, 3), dtype=np.uint8
-        )
         self.image_data.set_data(
             fmt="RGB",
             pitch=-image.shape[1] * 3,
@@ -224,24 +221,6 @@ class FrameSequence:
     def go_previous(self):
         self.frame_index = (self.frame_index - 1) % self.num_frames
         self.update_texture()
-
-
-def load_video(video_path):
-    import cv2
-
-    cap = cv2.VideoCapture(video_path)
-    frames = []
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frames.append(frame)
-
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    cap.release()
-    return np.array(frames), fps
 
 
 def show_video_array(video_array, fps: float = 30):

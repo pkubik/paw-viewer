@@ -1,1 +1,2 @@
-from paw_viewer.viewer import load_video, show_video_array
+from paw_viewer.viewer import show_video_array
+import paw_viewer.io
