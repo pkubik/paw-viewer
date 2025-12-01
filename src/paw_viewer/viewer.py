@@ -235,6 +235,7 @@ def show_video_array(video_array, fps: float = 30):
     zoom_level = ZoomLevel()
     scroll_speed = 20  # in pixels
 
+    pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
     label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=batch)
 
     keys = pyglet.window.key.KeyStateHandler()
