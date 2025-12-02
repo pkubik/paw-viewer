@@ -20,38 +20,10 @@ from pyglet.gl import (
 from pyglet.math import Mat4, Vec2, Vec3
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram
+from paw_viewer import shaders
 
-_vertex_source = """#version 420 core
-    in vec2 position;
-    in vec3 tex_coords;
-    out vec3 texture_coords;
-
-    uniform WindowBlock
-    {                       // This UBO is defined on Window creation, and available
-        mat4 projection;    // in all Shaders. You can modify these matrixes with the
-        mat4 view;          // Window.view and Window.projection properties.
-    } window;
-
-    uniform mat4 model;
-
-    void main()
-    {
-        gl_Position = window.projection * window.view * model * vec4(position, 1, 1);
-        texture_coords = tex_coords;
-    }
-"""
-
-_fragment_source = """#version 420 core
-    in vec3 texture_coords;
-    out vec4 final_colors;
-
-    uniform sampler2D our_texture;
-
-    void main()
-    {
-        final_colors = texture(our_texture, texture_coords.xy);
-    }
-"""
+_vertex_source = shaders.load_vertex_shader()
+_fragment_source = shaders.load_fragment_shader()
 
 vert_shader = Shader(_vertex_source, "vertex")
 frag_shader = Shader(_fragment_source, "fragment")
