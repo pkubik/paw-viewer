@@ -21,6 +21,7 @@ from pyglet.math import Mat4, Vec2, Vec3
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram
 from paw_viewer import shaders
+from paw_viewer import ui
 
 _vertex_source = shaders.load_vertex_shader()
 _fragment_source = shaders.load_fragment_shader()
@@ -208,7 +209,11 @@ def show_video_array(video_array, fps: float = 30):
     scroll_speed = 20  # in pixels
 
     pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
+
     label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=batch)
+
+    frame = pyglet.gui.Frame(window, order=4)
+    slider = ui.Slider(frame=frame, batch=batch)
 
     keys = pyglet.window.key.KeyStateHandler()
 
@@ -219,6 +224,8 @@ def show_video_array(video_array, fps: float = 30):
 
     @window.event
     def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+        if slider.handle_drag(x, y, dx, dy, buttons, modifiers):
+            return
         if buttons & pyglet.window.mouse.LEFT:
             nonlocal translation
             translation += Vec3(dx, dy, 0)
