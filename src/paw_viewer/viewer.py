@@ -109,6 +109,8 @@ class ZoomLevel:
 
 
 class FrameSequence:
+    """Represents a sequence of frames (images) and the texture used for rendering them."""
+
     def __init__(self, frames: np.ndarray, fps: float = 30):
         self.frames = frames
         self.fps = fps
@@ -125,28 +127,6 @@ class FrameSequence:
             pitch=-image.shape[1] * 3,
         )
         self.texture = self.image_data.get_texture()
-        self.indices = (0, 1, 2, 0, 2, 3)
-
-        self.vertex_positions = create_quad(0, 0, self.texture)
-
-        self.vert_shader = Shader(_vertex_source, "vertex")
-        self.frag_shader = Shader(_fragment_source, "fragment")
-        self.shader_program = ShaderProgram(self.vert_shader, self.frag_shader)
-        self.group = RenderGroup(self.texture, self.shader_program)
-
-    def update_model(self, model: Mat4):
-        self.shader_program["model"] = model
-
-    def create_vertex_list(self, batch: pyglet.graphics.Batch):
-        return self.shader_program.vertex_list_indexed(
-            4,
-            GL_TRIANGLES,
-            self.indices,
-            batch,
-            self.group,
-            position=("f", self.vertex_positions),
-            tex_coords=("f", self.texture.tex_coords),
-        )
 
     def animation_step(self, dt):
         if not self.running:
@@ -156,9 +136,6 @@ class FrameSequence:
         self.update_texture()
 
     def update_texture(self):
-        """
-        Scheduled function to update the texture content efficiently.
-        """
         image = self.frames[self.frame_index]
         self.image_data.set_data(
             fmt="RGB",
@@ -198,6 +175,40 @@ class FrameSequence:
         self.update_texture()
 
 
+class FrameView:
+    """Handles the viewport for rendering frames."""
+
+    def __init__(self, frame_sequence: FrameSequence, batch: pyglet.graphics.Batch):
+        self.frame_sequence = frame_sequence
+        self.texture = frame_sequence.texture
+        self.indices = (0, 1, 2, 0, 2, 3)
+        self.vertex_positions = create_quad(0, 0, self.texture)
+        self.batch = batch
+
+        # Initialize shaders
+        self.vert_shader = Shader(_vertex_source, "vertex")
+        self.frag_shader = Shader(_fragment_source, "fragment")
+        self.shader_program = ShaderProgram(self.vert_shader, self.frag_shader)
+
+        # Create render group
+        self.group = RenderGroup(self.texture, self.shader_program)
+        self.vertex_list = self.create_vertex_list(self.batch)
+
+    def update_model(self, model: Mat4):
+        self.shader_program["model"] = model
+
+    def create_vertex_list(self, batch: pyglet.graphics.Batch):
+        return self.shader_program.vertex_list_indexed(
+            4,
+            GL_TRIANGLES,
+            self.indices,
+            batch,
+            self.group,
+            position=("f", self.vertex_positions),
+            tex_coords=("f", self.texture.tex_coords),
+        )
+
+
 class ViewerWindow(pyglet.window.Window):
     def __init__(self, frame_sequence: FrameSequence, **kwargs):
         super().__init__(**kwargs)
@@ -216,7 +227,7 @@ class ViewerWindow(pyglet.window.Window):
         self.key_state = pyglet.window.key.KeyStateHandler()
         self.push_handlers(self.key_state)
 
-        self.vertex_list = frame_sequence.create_vertex_list(self.batch)
+        self.frame_view = FrameView(frame_sequence, batch=self.batch)
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_translation = Vec3(x, y, 0)
@@ -263,7 +274,7 @@ class ViewerWindow(pyglet.window.Window):
         self.model = Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
         self.label.text = f"Zoom: {int(scale * 100)}%"
 
-        self.frame_sequence.update_model(self.model)
+        self.frame_view.update_model(self.model)
         self.clear()
         self.batch.draw()
 
