@@ -25,10 +25,6 @@ from paw_viewer import shaders
 _vertex_source = shaders.load_vertex_shader()
 _fragment_source = shaders.load_fragment_shader()
 
-vert_shader = Shader(_vertex_source, "vertex")
-frag_shader = Shader(_fragment_source, "fragment")
-shader_program = ShaderProgram(vert_shader, frag_shader)
-
 
 class RenderGroup(Group):
     def __init__(self, texture, program, order=0, parent=None):
@@ -129,13 +125,20 @@ class FrameSequence:
             pitch=-image.shape[1] * 3,
         )
         self.texture = self.image_data.get_texture()
-        self.group = RenderGroup(self.texture, shader_program)
         self.indices = (0, 1, 2, 0, 2, 3)
 
         self.vertex_positions = create_quad(0, 0, self.texture)
 
+        self.vert_shader = Shader(_vertex_source, "vertex")
+        self.frag_shader = Shader(_fragment_source, "fragment")
+        self.shader_program = ShaderProgram(self.vert_shader, self.frag_shader)
+        self.group = RenderGroup(self.texture, self.shader_program)
+
+    def update_model(self, model: Mat4):
+        self.shader_program["model"] = model
+
     def create_vertex_list(self, batch: pyglet.graphics.Batch):
-        return shader_program.vertex_list_indexed(
+        return self.shader_program.vertex_list_indexed(
             4,
             GL_TRIANGLES,
             self.indices,
@@ -195,119 +198,107 @@ class FrameSequence:
         self.update_texture()
 
 
-def show_video_array(video_array, fps: float = 30):
-    frame_sequence = FrameSequence(video_array, fps)
+class ViewerWindow(pyglet.window.Window):
+    def __init__(self, frame_sequence: FrameSequence, **kwargs):
+        super().__init__(**kwargs)
+        self.frame_sequence = frame_sequence
 
-    window = pyglet.window.Window(resizable=True)
-    batch = pyglet.graphics.Batch()
-    model = pyglet.math.Mat4()
-    window_center = Vec3(window.width / 2, window.height / 2, 0)
-    cursor_translation = Vec3(window.width / 2, window.height / 2, 0)
-    translation = Vec3(window.width / 2, window.height / 2, 0)
-    zoom_level = ZoomLevel()
-    scroll_speed = 20  # in pixels
+        self.batch = pyglet.graphics.Batch()
+        self.model = pyglet.math.Mat4()
+        self.window_center = Vec3(self.width / 2, self.height / 2, 0)
+        self.cursor_translation = Vec3(self.width / 2, self.height / 2, 0)
+        self.translation = Vec3(self.width / 2, self.height / 2, 0)
+        self.zoom_level = ZoomLevel()
+        self.scroll_speed = 20  # in pixels
+        pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
+        self.label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=self.batch)
 
-    pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
-    label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=batch)
+        self.key_state = pyglet.window.key.KeyStateHandler()
+        self.push_handlers(self.key_state)
 
-    keys = pyglet.window.key.KeyStateHandler()
+        self.vertex_list = frame_sequence.create_vertex_list(self.batch)
 
-    @window.event
-    def on_mouse_motion(x, y, dx, dy):
-        nonlocal cursor_translation
-        cursor_translation = Vec3(x, y, 0)
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.cursor_translation = Vec3(x, y, 0)
 
-    @window.event
-    def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if buttons & pyglet.window.mouse.LEFT:
-            nonlocal translation
-            translation += Vec3(dx, dy, 0)
+            self.translation += Vec3(dx, dy, 0)
 
-    @window.event
-    def on_resize(width, height):
-        nonlocal translation
-        nonlocal window_center
+    def on_resize(self, width, height):
         new_window_center = Vec3(width / 2, height / 2, 0)
-        center_offset = new_window_center - window_center
-        window_center = new_window_center
-        translation += Vec3(center_offset.x, center_offset.y, 0)
+        center_offset = new_window_center - self.window_center
+        self.window_center = new_window_center
+        self.translation += Vec3(center_offset.x, center_offset.y, 0)
 
-    @window.event
-    def on_draw():
-        nonlocal model
-        nonlocal translation
-        nonlocal zoom_level
-
+    def on_draw(self):
+        keys = self.key_state
         if not keys.data.get(pyglet.window.key.LCTRL):
             if keys.data.get(pyglet.window.key.W):
-                translation += Vec3(0, -scroll_speed, 0)
+                self.translation += Vec3(0, -self.scroll_speed, 0)
             if keys.data.get(pyglet.window.key.S):
-                translation += Vec3(0, scroll_speed, 0)
+                self.translation += Vec3(0, self.scroll_speed, 0)
             if keys.data.get(pyglet.window.key.A):
-                translation += Vec3(scroll_speed, 0, 0)
+                self.translation += Vec3(self.scroll_speed, 0, 0)
             if keys.data.get(pyglet.window.key.D):
-                translation += Vec3(-scroll_speed, 0, 0)
+                self.translation += Vec3(-self.scroll_speed, 0, 0)
             if keys.data.get(pyglet.window.key.R):
-                scale_factor = zoom_level.zoom_in(0.25)
-                translation = (
-                    translation - cursor_translation
-                ) * scale_factor + cursor_translation
+                scale_factor = self.zoom_level.zoom_in(0.25)
+                self.translation = (
+                    self.translation - self.cursor_translation
+                ) * scale_factor + self.cursor_translation
             if keys.data.get(pyglet.window.key.F):
-                scale_factor = zoom_level.zoom_out(0.25)
-                translation = (
-                    translation - cursor_translation
-                ) * scale_factor + cursor_translation
+                scale_factor = self.zoom_level.zoom_out(0.25)
+                self.translation = (
+                    self.translation - self.cursor_translation
+                ) * scale_factor + self.cursor_translation
 
         if keys.data.get(pyglet.window.key.LCTRL) and keys.data.get(
             pyglet.window.key.R
         ):
-            zoom_level.reset()
-            translation = Vec3(window.width / 2, window.height / 2, 0)
+            self.zoom_level.reset()
+            self.translation = Vec3(self.width / 2, self.height / 2, 0)
 
-        scale = zoom_level.scale()
-        model = Mat4().translate(translation).scale(Vec3(scale, scale, 1.0))
+        scale = self.zoom_level.scale()
+        self.model = Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
+        self.label.text = f"Zoom: {int(scale * 100)}%"
 
-        label.text = f"Zoom: {int(scale * 100)}%"
+        self.frame_sequence.update_model(self.model)
+        self.clear()
+        self.batch.draw()
 
-        shader_program["model"] = model
-        window.clear()
-        batch.draw()
-
-    @window.event
-    def on_mouse_scroll(x, y, scroll_x, scroll_y):
-        nonlocal translation
-        nonlocal zoom_level
-
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if scroll_y > 0:
-            scale_factor = zoom_level.zoom_in(0.5 * scroll_y)
-            translation = (
-                translation - cursor_translation
-            ) * scale_factor + cursor_translation
+            scale_factor = self.zoom_level.zoom_in(0.5 * scroll_y)
+            self.translation = (
+                self.translation - self.cursor_translation
+            ) * scale_factor + self.cursor_translation
         elif scroll_y < 0:
-            scale_factor = zoom_level.zoom_out(-0.5 * scroll_y)
-            translation = (
-                translation - cursor_translation
-            ) * scale_factor + cursor_translation
+            scale_factor = self.zoom_level.zoom_out(-0.5 * scroll_y)
+            self.translation = (
+                self.translation - self.cursor_translation
+            ) * scale_factor + self.cursor_translation
 
-    @window.event
-    def on_key_press(symbol, modifiers):
+    def on_key_press(self, symbol, modifiers):
         if pyglet.window.key.MOD_CTRL & modifiers:
             if symbol == pyglet.window.key.Q:
-                window.close()
+                self.close()
             if symbol == pyglet.window.key.S:
-                frame_sequence.go_start()
+                self.frame_sequence.go_start()
             if symbol == pyglet.window.key.D:
-                frame_sequence.go_next()
+                self.frame_sequence.go_next()
             if symbol == pyglet.window.key.A:
-                frame_sequence.go_previous()
+                self.frame_sequence.go_previous()
             if symbol == pyglet.window.key.E:
-                frame_sequence.go_end()
+                self.frame_sequence.go_end()
         if symbol == pyglet.window.key.SPACE:
-            frame_sequence.toggle()
+            self.frame_sequence.toggle()
         if symbol == pyglet.window.key.ESCAPE:
             return pyglet.event.EVENT_HANDLED
 
-    vertex_list = frame_sequence.create_vertex_list(batch)
 
-    window.push_handlers(keys)
+def show_video_array(video_array, fps: float = 30):
+    frame_sequence = FrameSequence(video_array, fps=fps)
+    viewer_window = ViewerWindow(frame_sequence=frame_sequence)
+
     pyglet.app.run()
