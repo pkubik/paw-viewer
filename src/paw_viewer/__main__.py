@@ -14,7 +14,7 @@ def main():
     args = parser.parse_args()
 
     video, fps = auto_load_file(args.file)
-    print(f"Video loaded with shape: {video.shape}, FPS: {fps}")
+    print(f"Loaded frames with shape: {video.shape}, FPS: {fps}")
 
     show_video_array(video, fps=args.fps if args.fps is not None else fps)
 
