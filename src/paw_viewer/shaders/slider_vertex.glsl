@@ -1,7 +1,6 @@
 #version 420 core
 in vec2 position;
-in vec3 tex_coords;
-out vec3 texture_coords;
+out vec2 coords;
 
 uniform WindowBlock
 {                       // This UBO is defined on Window creation, and available
@@ -9,10 +8,11 @@ uniform WindowBlock
     mat4 view;          // Window.view and Window.projection properties.
 } window;
 
-uniform mat4 model;
+uniform vec2 translation;
+uniform vec2 scale;
 
 void main()
 {
-    gl_Position = window.projection * window.view * model * vec4(position, 1, 1);
-    texture_coords = tex_coords;
+    gl_Position = window.projection * window.view * vec4(scale * position + translation, 1, 1);
+    coords = position;
 }
