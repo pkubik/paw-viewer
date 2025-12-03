@@ -1,25 +1,25 @@
-import pyglet
 import numpy as np
-
+import pyglet
 from pyglet.gl import (
+    GL_BLEND,
+    GL_NEAREST,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_SRC_ALPHA,
+    GL_TEXTURE0,
+    GL_TEXTURE_MAG_FILTER,
+    GL_TEXTURE_MIN_FILTER,
+    GL_TRIANGLES,
     glActiveTexture,
     glBindTexture,
-    glEnable,
     glBlendFunc,
     glDisable,
+    glEnable,
     glTexParameteri,
-    GL_TEXTURE_MIN_FILTER,
-    GL_TEXTURE_MAG_FILTER,
-    GL_NEAREST,
-    GL_TEXTURE0,
-    GL_TRIANGLES,
-    GL_BLEND,
-    GL_SRC_ALPHA,
-    GL_ONE_MINUS_SRC_ALPHA,
 )
-from pyglet.math import Mat4, Vec2, Vec3
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram
+from pyglet.math import Mat4, Vec2, Vec3
+
 from paw_viewer import shaders
 
 _vertex_source = shaders.load_vertex_shader()
@@ -206,9 +206,6 @@ class FrameView:
         self.zoom_level = ZoomLevel()
         self.scroll_speed = 20  # in pixels
 
-    def update_model(self, model: Mat4):
-        self.shader_program["model"] = model
-
     def create_vertex_list(self, batch: pyglet.graphics.Batch):
         return self.shader_program.vertex_list_indexed(
             4,
@@ -289,12 +286,13 @@ class FrameView:
 
         scale = self.zoom_level.scale()
         self.model = Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
-
-        self.update_model(self.model)
+        self.shader_program["model"] = self.model
 
 
 class ViewerWindow(pyglet.window.Window):
-    def __init__(self, frame_sequence: FrameSequence, caption="paw", resizable=True, **kwargs):
+    def __init__(
+        self, frame_sequence: FrameSequence, caption="paw", resizable=True, **kwargs
+    ):
         super().__init__(caption=caption, resizable=resizable, **kwargs)
         self.batch = pyglet.graphics.Batch()
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
