@@ -196,7 +196,7 @@ class FrameView:
 
         # Create render group
         self.group = RenderGroup(self.texture, self.shader_program)
-        self.vertex_list = self.create_vertex_list(self.batch)
+        self.vertex_list = self.create_vertex_list()
 
         # Viewport state
         self.model = pyglet.math.Mat4()
@@ -206,12 +206,12 @@ class FrameView:
         self.zoom_level = ZoomLevel()
         self.scroll_speed = 20  # in pixels
 
-    def create_vertex_list(self, batch: pyglet.graphics.Batch):
+    def create_vertex_list(self):
         return self.shader_program.vertex_list_indexed(
             4,
             GL_TRIANGLES,
             self.indices,
-            batch,
+            self.batch,
             self.group,
             position=("f", self.vertex_positions),
             tex_coords=("f", self.texture.tex_coords),
