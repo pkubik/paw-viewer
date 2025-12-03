@@ -294,8 +294,8 @@ class FrameView:
 
 
 class ViewerWindow(pyglet.window.Window):
-    def __init__(self, frame_sequence: FrameSequence, resizable=True, **kwargs):
-        super().__init__(resizable=resizable, **kwargs)
+    def __init__(self, frame_sequence: FrameSequence, caption="paw", resizable=True, **kwargs):
+        super().__init__(caption=caption, resizable=resizable, **kwargs)
         self.batch = pyglet.graphics.Batch()
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
         self.label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=self.batch)
