@@ -42,7 +42,7 @@ void main()
     float m2 = 1.0 - smoothstep(4., 5., d);
     m1 = clamp(m1 - m2, 0., 1.);
     m2 = clamp(m2 - mfill, 0., 1.);
-    final_color = mix(vec4(0), vec4(0.9, 0.9, 0.9, 0.9), m1)
-        + mix(vec4(0), vec4(0.1, 0.3, 0.15, 0.5), m2)
+    final_color = mix(vec4(0), vec4(0.9, 0.9, 0.9, 0.6), m1)
+        + mix(vec4(0), vec4(0.1, 0.2, 0.15, 0.8), m2)
         + mix(vec4(0), vec4(0.2, 0.5, 0.3, 0.9), mfill);
 }
