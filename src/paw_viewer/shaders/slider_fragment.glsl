@@ -38,7 +38,7 @@ void main()
     );
 
     float m1 = 1.0 - smoothstep(5., 10., d);
-    float mfill = 1.0 - smoothstep(4., 5., pd);
+    float mfill = 1.0 - smoothstep(2., 3., pd);
     float m2 = 1.0 - smoothstep(4., 5., d);
     m1 = clamp(m1 - m2, 0., 1.);
     m2 = clamp(m2 - mfill, 0., 1.);

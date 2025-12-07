@@ -65,28 +65,34 @@ class RenderGroup(Group):
 class Slider:
     """Fancy slider widget"""
 
-    def __init__(self, x, y, width, height, batch: pyglet.graphics.Batch):
+    def __init__(self, x, y, length, steps: int, batch: pyglet.graphics.Batch):
         self.x = x
         self.y = y
-        self.width = width
-        self.height = height
+        self.length = length
         self.batch = batch
-        self.side_margin = 20
-        self.bottom_margin = 20
+        self.stroke = 10
+        self.current_step = 10
+        self.total_steps = steps
 
         self.group = RenderGroup(order=2)
         self.vertex_list = self.group.create_vertex_list(self.batch)
         self.slider_ubo = self.group.program.uniform_blocks["Slider"].create_ubo()
 
     def on_draw(self):
-        start_x = self.x + self.side_margin
-        end_x = self.x + self.width - self.side_margin
+        box_width = self.length
+        box_height = 2 * self.stroke
+        inner_slider_length = self.length - 2 * self.stroke
+        start_x = self.x + self.stroke
+        end_x = self.x + box_width - self.stroke
         self.group.program["translation"] = Vec2(self.x, self.y)
         self.group.program["scale"] = (
-            Vec2(self.width, self.height) if start_x < end_x else Vec2(0, 0)
+            Vec2(box_width, box_height) if start_x < end_x else Vec2(0, 0)
         )
         with self.slider_ubo as slider:
             slider.start_x = float(start_x)
             slider.end_x = float(end_x)
-            slider.knob_x = float(400)
-            slider.y = float(self.bottom_margin)
+            slider.knob_x = float(
+                start_x
+                + inner_slider_length * self.current_step / (self.total_steps - 1)
+            )
+            slider.y = float(self.y + self.stroke)
