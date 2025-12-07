@@ -21,6 +21,7 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Mat4, Vec2, Vec3
 
 from paw_viewer import shaders
+from paw_viewer.slider import Slider
 
 _vertex_source = shaders.load_vertex_shader()
 _fragment_source = shaders.load_fragment_shader()
@@ -76,14 +77,6 @@ class RenderGroup(Group):
             and self.program == other.program
             and self.parent == other.parent
         )
-
-
-def create_quad(x, y, texture):
-    x1 = -texture.width / 2 + x
-    y1 = -texture.height / 2 + y
-    x2 = texture.width / 2 + x
-    y2 = texture.height / 2 + y
-    return x1, y1, x2, y1, x2, y2, x1, y2
 
 
 class ZoomLevel:
@@ -185,8 +178,8 @@ class FrameView:
         self.height = height
         self.frame_sequence = frame_sequence
         self.texture = frame_sequence.texture
-        self.indices = (0, 1, 2, 0, 2, 3)
-        self.vertex_positions = create_quad(0, 0, self.texture)
+        self.indices = shaders.QUAD_INDICES
+        self.vertex_positions = shaders.create_quad_from_texture(self.texture)
         self.batch = batch
 
         # Initialize shaders
@@ -195,7 +188,7 @@ class FrameView:
         self.shader_program = ShaderProgram(self.vert_shader, self.frag_shader)
 
         # Create render group
-        self.group = RenderGroup(self.texture, self.shader_program)
+        self.group = RenderGroup(self.texture, self.shader_program, order=1)
         self.vertex_list = self.create_vertex_list()
 
         # Viewport state
@@ -298,19 +291,41 @@ class ViewerWindow(pyglet.window.Window):
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
         self.label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=self.batch)
 
+        self.frame_sequence = frame_sequence
         self.key_state = pyglet.window.key.KeyStateHandler()
         self.push_handlers(self.key_state)
 
         self.frame_view = FrameView(
             self.width,
             self.height,
-            frame_sequence,
+            self.frame_sequence,
             batch=self.batch,
         )
         self.push_handlers(self.frame_view)
 
+        self.slider_margin = 200
+        self.slider = Slider(
+            x=self.slider_margin,
+            y=20,
+            length=self.width - 2 * self.slider_margin,
+            steps=self.frame_sequence.num_frames,
+            batch=self.batch,
+        )
+        self.push_handlers(self.slider)
+
+        @self.slider.event
+        def on_change(value):
+            self.frame_sequence.frame_index = value
+            self.frame_sequence.update_texture()
+
+    def on_resize(self, width: int, height: int):
+        self.slider.length = self.width - 2 * self.slider_margin
+        self.slider.update_geometry()
+        return super().on_resize(width, height)
+
     def on_draw(self):
         self.frame_view.handle_keys(self.key_state)
+        self.slider.update_step(self.frame_sequence.frame_index)
         self.label.text = f"Zoom: {int(self.frame_view.zoom_level.scale() * 100)}%"
         self.clear()
         self.batch.draw()
