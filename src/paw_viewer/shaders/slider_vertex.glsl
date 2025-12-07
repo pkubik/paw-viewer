@@ -3,9 +3,6 @@ in vec2 position;
 out vec2 coords;
 out vec2 bottom_left;
 out vec2 top_right;
-out float x1;
-out float x2;
-out float y;
 
 uniform WindowBlock
 {                       // This UBO is defined on Window creation, and available
@@ -15,8 +12,6 @@ uniform WindowBlock
 
 uniform vec2 translation;
 uniform vec2 scale;
-uniform vec2 v1;
-uniform vec2 v2;
 
 void main()
 {
@@ -24,7 +19,4 @@ void main()
     coords = position;
     bottom_left = translation;
     top_right = translation + scale;
-    x1 = v1.x;
-    x2 = v2.x;
-    y = v2.y;
 }

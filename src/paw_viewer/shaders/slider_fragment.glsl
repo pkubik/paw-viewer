@@ -4,17 +4,25 @@ in vec4 vertex_colors;
 in vec2 coords;
 in vec2 bottom_left;
 in vec2 top_right;
-in float x1;
-in float x2;
-in float y;
 out vec4 final_color;
+
+uniform Bar
+{
+    float start_x;
+    float end_x;
+    float knob_x;
+    float y;
+} bar;
 
 void main()
 {
-    float d = abs(gl_FragCoord.y - y);
-    if (gl_FragCoord.x < x1 || gl_FragCoord.x > x2) {
-        float d1 = length(gl_FragCoord.xy - vec2(x1, y));
-        float d2 = length(gl_FragCoord.xy - vec2(x2, y));
+    vec2 v1 = vec2(bar.start_x, bar.y);
+    vec2 v2 = vec2(bar.end_x, bar.y);
+
+    float d = abs(gl_FragCoord.y - bar.y);
+    if (gl_FragCoord.x < v1.x || gl_FragCoord.x > v2.x) {
+        float d1 = length(gl_FragCoord.xy - v1);
+        float d2 = length(gl_FragCoord.xy - v2);
         d = min(d1, d2);
     }
 

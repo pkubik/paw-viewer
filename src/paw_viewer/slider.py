@@ -74,22 +74,19 @@ class Slider:
         self.side_margin = 20
         self.bottom_margin = 20
 
-        # Create render group
         self.group = RenderGroup(order=2)
         self.vertex_list = self.group.create_vertex_list(self.batch)
+        self.bar_ubo = self.group.program.uniform_blocks["Bar"].create_ubo()
 
     def on_draw(self):
-        v1 = Vec2(
-            self.x + self.side_margin,
-            self.bottom_margin,
-        )
-        v2 = Vec2(
-            self.x + self.width - self.side_margin,
-            self.bottom_margin,
-        )
+        start_x = self.x + self.side_margin
+        end_x = self.x + self.width - self.side_margin
         self.group.program["translation"] = Vec2(self.x, self.y)
         self.group.program["scale"] = (
-            Vec2(self.width, self.height) if v2.x > v1.x else Vec2(0, 0)
+            Vec2(self.width, self.height) if start_x < end_x else Vec2(0, 0)
         )
-        self.group.program["v1"] = v1
-        self.group.program["v2"] = v2
+        with self.bar_ubo as bar:
+            bar.start_x = float(start_x)
+            bar.end_x = float(end_x)
+            bar.knob_x = float(400)
+            bar.y = float(self.bottom_margin)
