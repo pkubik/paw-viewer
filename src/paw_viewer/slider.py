@@ -131,6 +131,7 @@ class Slider(EventDispatcher):
             slider.start_x = float(start_x)
             slider.end_x = float(end_x)
             slider.knob_x = float(
-                start_x + inner_slider_length * current_step / (total_steps - 1)
+                start_x + inner_slider_length * (current_step + 1) / total_steps
             )
             slider.y = float(self.y + self.stroke)
+            slider.steps = self.total_steps
