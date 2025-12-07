@@ -84,10 +84,29 @@ class Slider(EventDispatcher):
         self.vertex_list = self.group.create_vertex_list(self.batch)
         self.slider_ubo = self.group.program.uniform_blocks["Slider"].create_ubo()
 
+        self.step_label = pyglet.text.Label(
+            f"{self.current_step + 1}/{self.total_steps}",
+            x=self.x + self.length + self.stroke,
+            y=self.y + 2 * self.stroke,
+            color=(51, 153, 80),
+            weight="bold",
+            font_size=2 * self.stroke,
+            batch=self.batch,
+            anchor_y="center",
+        )
+
         self.register_event_type("on_change")
+
+    def update_geometry(self):
+        self.step_label.x = self.x + self.length + self.stroke
+        self.step_label.y = self.y + 2 * self.stroke - 4
+
+    def update_step_label(self):
+        self.step_label.text = f"{self.current_step + 1}/{self.total_steps}"
 
     def update_step(self, step: int):
         self.current_step = step
+        self.update_step_label()
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         self.is_dragged = False
@@ -95,12 +114,18 @@ class Slider(EventDispatcher):
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         return self.on_mouse_press(x + dx, y + dy, buttons, modifiers)
 
-    def on_mouse_press(self, x, y, buttons, modifiers):
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.step_label.visible = self.is_in_boundary(x + dx, y + dy)
+
+    def is_in_boundary(self, x, y):
         box_width = self.length
         box_height = 2 * self.stroke
-        is_in_box = (self.x <= x <= self.x + box_width) and (
-            self.y <= y <= self.y + box_height
-        )
+        is_x_in_boundary = self.x <= x <= self.x + box_width
+        is_y_in_boundary = self.y <= y <= self.y + box_height
+        return is_x_in_boundary and is_y_in_boundary
+
+    def on_mouse_press(self, x, y, buttons, modifiers):
+        is_in_box = self.is_in_boundary(x, y)
         if (is_in_box or self.is_dragged) and buttons & pyglet.window.mouse.LEFT:
             self.is_dragged = True
             start_x = self.x + self.stroke
@@ -109,8 +134,12 @@ class Slider(EventDispatcher):
             self.current_step = clip(
                 int(ratio * self.total_steps), 0, self.total_steps - 1
             )
-            self.dispatch_event("on_change", self.current_step)
+            self.trigger_step_change()
             return True
+
+    def trigger_step_change(self):
+        self.update_step_label()
+        self.dispatch_event("on_change", self.current_step)
 
     def on_draw(self):
         box_width = self.length

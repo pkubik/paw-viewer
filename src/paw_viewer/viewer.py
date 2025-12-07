@@ -320,6 +320,7 @@ class ViewerWindow(pyglet.window.Window):
 
     def on_resize(self, width: int, height: int):
         self.slider.length = self.width - 2 * self.slider_margin
+        self.slider.update_geometry()
         return super().on_resize(width, height)
 
     def on_draw(self):
