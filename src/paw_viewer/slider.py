@@ -71,11 +71,25 @@ class Slider:
         self.width = width
         self.height = height
         self.batch = batch
+        self.side_margin = 20
+        self.bottom_margin = 20
 
         # Create render group
         self.group = RenderGroup(order=2)
         self.vertex_list = self.group.create_vertex_list(self.batch)
 
     def on_draw(self):
+        v1 = Vec2(
+            self.x + self.side_margin,
+            self.bottom_margin,
+        )
+        v2 = Vec2(
+            self.x + self.width - self.side_margin,
+            self.bottom_margin,
+        )
         self.group.program["translation"] = Vec2(self.x, self.y)
-        self.group.program["scale"] = Vec2(self.width, self.height)
+        self.group.program["scale"] = (
+            Vec2(self.width, self.height) if v2.x > v1.x else Vec2(0, 0)
+        )
+        self.group.program["v1"] = v1
+        self.group.program["v2"] = v2

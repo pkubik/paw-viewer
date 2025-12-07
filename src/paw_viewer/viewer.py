@@ -291,6 +291,7 @@ class ViewerWindow(pyglet.window.Window):
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
         self.label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=self.batch)
 
+        self.frame_sequence = frame_sequence
         self.key_state = pyglet.window.key.KeyStateHandler()
         self.push_handlers(self.key_state)
 
@@ -307,7 +308,7 @@ class ViewerWindow(pyglet.window.Window):
         self.frame_view = FrameView(
             self.width,
             self.height,
-            frame_sequence,
+            self.frame_sequence,
             batch=self.batch,
         )
         self.push_handlers(self.frame_view)
@@ -318,6 +319,7 @@ class ViewerWindow(pyglet.window.Window):
 
     def on_draw(self):
         self.frame_view.handle_keys(self.key_state)
+        self.frame_view
         self.label.text = f"Zoom: {int(self.frame_view.zoom_level.scale() * 100)}%"
         self.clear()
         self.batch.draw()
