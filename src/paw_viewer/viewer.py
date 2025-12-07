@@ -295,6 +295,14 @@ class ViewerWindow(pyglet.window.Window):
         self.key_state = pyglet.window.key.KeyStateHandler()
         self.push_handlers(self.key_state)
 
+        self.frame_view = FrameView(
+            self.width,
+            self.height,
+            self.frame_sequence,
+            batch=self.batch,
+        )
+        self.push_handlers(self.frame_view)
+
         self.slider_margin = 200
         self.slider = Slider(
             x=self.slider_margin,
@@ -305,21 +313,18 @@ class ViewerWindow(pyglet.window.Window):
         )
         self.push_handlers(self.slider)
 
-        self.frame_view = FrameView(
-            self.width,
-            self.height,
-            self.frame_sequence,
-            batch=self.batch,
-        )
-        self.push_handlers(self.frame_view)
+        @self.slider.event
+        def on_change(value):
+            self.frame_sequence.frame_index = value
+            self.frame_sequence.update_texture()
 
     def on_resize(self, width: int, height: int):
-        self.slider.width = self.width - 2 * self.slider_margin
+        self.slider.length = self.width - 2 * self.slider_margin
         return super().on_resize(width, height)
 
     def on_draw(self):
         self.frame_view.handle_keys(self.key_state)
-        self.slider.current_step = self.frame_sequence.frame_index
+        self.slider.update_step(self.frame_sequence.frame_index)
         self.label.text = f"Zoom: {int(self.frame_view.zoom_level.scale() * 100)}%"
         self.clear()
         self.batch.draw()
