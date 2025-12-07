@@ -6,20 +6,20 @@ in vec2 bottom_left;
 in vec2 top_right;
 out vec4 final_color;
 
-uniform Bar
+uniform Slider
 {
     float start_x;
     float end_x;
     float knob_x;
     float y;
-} bar;
+} slider;
 
 void main()
 {
-    vec2 v1 = vec2(bar.start_x, bar.y);
-    vec2 v2 = vec2(bar.end_x, bar.y);
+    vec2 v1 = vec2(slider.start_x, slider.y);
+    vec2 v2 = vec2(slider.end_x, slider.y);
 
-    float d = abs(gl_FragCoord.y - bar.y);
+    float d = abs(gl_FragCoord.y - slider.y);
     if (gl_FragCoord.x < v1.x || gl_FragCoord.x > v2.x) {
         float d1 = length(gl_FragCoord.xy - v1);
         float d2 = length(gl_FragCoord.xy - v2);

@@ -76,7 +76,7 @@ class Slider:
 
         self.group = RenderGroup(order=2)
         self.vertex_list = self.group.create_vertex_list(self.batch)
-        self.bar_ubo = self.group.program.uniform_blocks["Bar"].create_ubo()
+        self.slider_ubo = self.group.program.uniform_blocks["Slider"].create_ubo()
 
     def on_draw(self):
         start_x = self.x + self.side_margin
@@ -85,8 +85,8 @@ class Slider:
         self.group.program["scale"] = (
             Vec2(self.width, self.height) if start_x < end_x else Vec2(0, 0)
         )
-        with self.bar_ubo as bar:
-            bar.start_x = float(start_x)
-            bar.end_x = float(end_x)
-            bar.knob_x = float(400)
-            bar.y = float(self.bottom_margin)
+        with self.slider_ubo as slider:
+            slider.start_x = float(start_x)
+            slider.end_x = float(end_x)
+            slider.knob_x = float(400)
+            slider.y = float(self.bottom_margin)
