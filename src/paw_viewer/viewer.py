@@ -21,6 +21,7 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Mat4, Vec2, Vec3
 
 from paw_viewer import shaders
+from paw_viewer.frame_sequence import FrameSequence
 from paw_viewer.slider import Slider
 from paw_viewer.zoom_level import ZoomLevel
 
@@ -78,73 +79,6 @@ class RenderGroup(Group):
             and self.program == other.program
             and self.parent == other.parent
         )
-
-
-class FrameSequence:
-    """Represents a sequence of frames (images) and the texture used for rendering them."""
-
-    def __init__(self, frames: np.ndarray, fps: float = 30):
-        self.frames = frames
-        self.fps = fps
-        self.num_frames = frames.shape[0]
-        self.frame_index = 0
-        self.running = False
-
-        image = self.frames[0]
-        self.image_data = pyglet.image.ImageData(
-            width=image.shape[1],
-            height=image.shape[0],
-            fmt="RGB",
-            data=image.tobytes(),
-            pitch=-image.shape[1] * 3,
-        )
-        self.texture = self.image_data.get_texture()
-
-    def animation_step(self, dt):
-        if not self.running:
-            # just in case - this should not be called when not running
-            return
-        self.frame_index = (self.frame_index + 1) % self.num_frames
-        self.update_texture()
-
-    def update_texture(self):
-        image = self.frames[self.frame_index]
-        self.image_data.set_data(
-            fmt="RGB",
-            pitch=-image.shape[1] * 3,
-            data=image.tobytes(),
-        )
-        self.texture.blit_into(self.image_data, 0, 0, 0)
-
-    def start(self):
-        pyglet.clock.schedule_interval(self.animation_step, 1 / self.fps)
-        self.running = True
-
-    def stop(self):
-        pyglet.clock.unschedule(self.animation_step)
-        self.running = False
-
-    def toggle(self):
-        if self.running:
-            self.stop()
-        else:
-            self.start()
-
-    def go_start(self):
-        self.frame_index = 0
-        self.update_texture()
-
-    def go_end(self):
-        self.frame_index = self.num_frames - 1
-        self.update_texture()
-
-    def go_next(self):
-        self.frame_index = (self.frame_index + 1) % self.num_frames
-        self.update_texture()
-
-    def go_previous(self):
-        self.frame_index = (self.frame_index - 1) % self.num_frames
-        self.update_texture()
 
 
 class FrameView:
