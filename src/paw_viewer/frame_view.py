@@ -1,4 +1,3 @@
-import numpy as np
 import pyglet
 from pyglet.gl import (
     GL_BLEND,
@@ -24,12 +23,14 @@ from paw_viewer import shaders
 from paw_viewer.frame_sequence import FrameSequence
 from paw_viewer.zoom_level import ZoomLevel
 
-_vertex_source = shaders.load_vertex_shader()
-_fragment_source = shaders.load_fragment_shader()
+_vertex_source = shaders.load_shader("vertex.glsl")
+_fragment_source = shaders.load_shader("fragment.glsl")
+# _background_vertex_source = shaders.load_shader("background_vertex.glsl")
+# _background_fragment_source = shaders.load_shader("background_fragment.glsl")
 
 
 class RenderGroup(Group):
-    def __init__(self, texture, program, order=0, parent=None):
+    def __init__(self, texture, order=0, parent=None):
         """Create a RenderGroup.
 
         :Parameters:
@@ -44,7 +45,20 @@ class RenderGroup(Group):
         """
         super().__init__(order, parent)
         self.texture = texture
-        self.program = program
+        self.vert_shader = Shader(_vertex_source, "vertex")
+        self.frag_shader = Shader(_fragment_source, "fragment")
+        self.program = ShaderProgram(self.vert_shader, self.frag_shader)
+
+    def create_vertex_list(self, batch):
+        return self.program.vertex_list_indexed(
+            4,
+            GL_TRIANGLES,
+            shaders.QUAD_INDICES,
+            batch,
+            self,
+            position=("f", shaders.create_quad_from_texture(self.texture)),
+            tex_coords=("f", self.texture.tex_coords),
+        )
 
     def set_state(self):
         glActiveTexture(GL_TEXTURE0)
@@ -80,6 +94,50 @@ class RenderGroup(Group):
         )
 
 
+class BackgroundRenderGroup(Group):
+    def __init__(self, order=0, parent=None):
+        super().__init__(order, parent)
+        self.program = ShaderProgram(
+            Shader(_background_vertex_source, "vertex"),
+            Shader(_background_fragment_source, "fragment"),
+        )
+
+    def set_state(self):
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.program.use()
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+
+    def create_vertex_list(self, batch):
+        return self.program.vertex_list_indexed(
+            4,
+            GL_TRIANGLES,
+            shaders.QUAD_INDICES,
+            batch,
+            self,
+            position=("f", shaders.QUAD_CORNER_COORDS),
+        )
+
+    def __hash__(self):
+        return hash(
+            (
+                self.order,
+                self.parent,
+                self.program,
+            )
+        )
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__
+            and self.order == other.order
+            and self.program == other.program
+            and self.parent == other.parent
+        )
+
+
 class FrameView:
     """Handles the viewport for rendering frames."""
 
@@ -90,18 +148,11 @@ class FrameView:
         self.height = height
         self.frame_sequence = frame_sequence
         self.texture = frame_sequence.texture
-        self.indices = shaders.QUAD_INDICES
-        self.vertex_positions = shaders.create_quad_from_texture(self.texture)
         self.batch = batch
 
-        # Initialize shaders
-        self.vert_shader = Shader(_vertex_source, "vertex")
-        self.frag_shader = Shader(_fragment_source, "fragment")
-        self.shader_program = ShaderProgram(self.vert_shader, self.frag_shader)
-
         # Create render group
-        self.group = RenderGroup(self.texture, self.shader_program, order=1)
-        self.vertex_list = self.create_vertex_list()
+        self.group = RenderGroup(self.texture, order=1)
+        self.vertex_list = self.group.create_vertex_list(self.batch)
 
         # Viewport state
         self.model = pyglet.math.Mat4()
@@ -110,17 +161,6 @@ class FrameView:
         self.translation = Vec3(width / 2, height / 2, 0)
         self.zoom_level = ZoomLevel()
         self.scroll_speed = 20  # in pixels
-
-    def create_vertex_list(self):
-        return self.shader_program.vertex_list_indexed(
-            4,
-            GL_TRIANGLES,
-            self.indices,
-            self.batch,
-            self.group,
-            position=("f", self.vertex_positions),
-            tex_coords=("f", self.texture.tex_coords),
-        )
 
     def on_resize(self, width, height):
         self.width = width
@@ -191,4 +231,4 @@ class FrameView:
 
         scale = self.zoom_level.scale()
         self.model = Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
-        self.shader_program["model"] = self.model
+        self.group.program["model"] = self.model

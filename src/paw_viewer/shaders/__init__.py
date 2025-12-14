@@ -8,6 +8,11 @@ QUAD_INDICES = (0, 1, 2, 0, 2, 3)
 QUAD_CORNER_COORDS = (0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0)
 
 
+def load_shader(name: str) -> str:
+    path = Path(__file__).parent / name
+    return path.read_text()
+
+
 def load_vertex_shader():
     return VERTEX_SHADER_PATH.read_text()
 
