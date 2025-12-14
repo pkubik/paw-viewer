@@ -25,8 +25,8 @@ from paw_viewer.zoom_level import ZoomLevel
 
 _vertex_source = shaders.load_shader("vertex.glsl")
 _fragment_source = shaders.load_shader("fragment.glsl")
-# _background_vertex_source = shaders.load_shader("background_vertex.glsl")
-# _background_fragment_source = shaders.load_shader("background_fragment.glsl")
+_background_vertex_source = shaders.load_shader("background_vertex.glsl")
+_background_fragment_source = shaders.load_shader("background_fragment.glsl")
 
 
 class RenderGroup(Group):
@@ -150,8 +150,11 @@ class FrameView:
         self.texture = frame_sequence.texture
         self.batch = batch
 
-        # Create render group
-        self.group = RenderGroup(self.texture, order=1)
+        # Create render groups
+        self.bg_group = BackgroundRenderGroup(order=0)
+        self.bg_vertex_list = self.bg_group.create_vertex_list(self.batch)
+
+        self.group = RenderGroup(self.texture, order=4)
         self.vertex_list = self.group.create_vertex_list(self.batch)
 
         # Viewport state

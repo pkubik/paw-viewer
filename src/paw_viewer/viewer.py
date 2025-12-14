@@ -10,9 +10,9 @@ class ViewerWindow(pyglet.window.Window):
         self, frame_sequence: FrameSequence, caption="paw", resizable=True, **kwargs
     ):
         super().__init__(caption=caption, resizable=resizable, **kwargs)
+        self.overlay_group = pyglet.graphics.Group(order=8)
         self.batch = pyglet.graphics.Batch()
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
-        self.label = pyglet.text.Label("Zoom: 100%", x=5, y=5, batch=self.batch)
 
         self.frame_sequence = frame_sequence
         self.key_state = pyglet.window.key.KeyStateHandler()
@@ -33,6 +33,7 @@ class ViewerWindow(pyglet.window.Window):
             length=self.width - 2 * self.slider_margin,
             steps=self.frame_sequence.num_frames,
             batch=self.batch,
+            parent_group=self.overlay_group,
         )
         self.push_handlers(self.slider)
 
@@ -40,6 +41,14 @@ class ViewerWindow(pyglet.window.Window):
         def on_change(value):
             self.frame_sequence.frame_index = value
             self.frame_sequence.update_texture()
+
+        self.label = pyglet.text.Label(
+            "Zoom: 100%",
+            x=5,
+            y=5,
+            batch=self.batch,
+            group=self.overlay_group,
+        )
 
     def on_resize(self, width: int, height: int):
         self.slider.length = self.width - 2 * self.slider_margin
