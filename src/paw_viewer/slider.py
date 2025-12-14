@@ -70,7 +70,15 @@ def clip(x, min_x, max_x):
 class Slider(EventDispatcher):
     """Fancy slider widget"""
 
-    def __init__(self, x, y, length, steps: int, batch: pyglet.graphics.Batch):
+    def __init__(
+        self,
+        x,
+        y,
+        length,
+        steps: int,
+        batch: pyglet.graphics.Batch,
+        parent_group: pyglet.graphics.Group,
+    ):
         self.x = x
         self.y = y
         self.length = length
@@ -80,7 +88,7 @@ class Slider(EventDispatcher):
         self.total_steps = steps
         self.is_dragged = False
 
-        self.group = RenderGroup(order=2)
+        self.group = RenderGroup(parent=parent_group)
         self.vertex_list = self.group.create_vertex_list(self.batch)
         self.slider_ubo = self.group.program.uniform_blocks["Slider"].create_ubo()
 
