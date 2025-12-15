@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import TypeGuard
 
 import pyglet
 from pyglet.gl import (
@@ -136,50 +135,6 @@ class BackgroundRenderGroup(Group):
         )
 
 
-class CropRenderGroup(Group):
-    def __init__(self, order=0, parent=None):
-        super().__init__(order, parent)
-        self.program = ShaderProgram(
-            Shader(shaders.load_shader("crop_vertex.glsl"), "vertex"),
-            Shader(shaders.load_shader("crop_fragment.glsl"), "fragment"),
-        )
-
-    def set_state(self):
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self.program.use()
-
-    def unset_state(self):
-        glDisable(GL_BLEND)
-
-    def create_vertex_list(self, batch):
-        return self.program.vertex_list_indexed(
-            4,
-            GL_TRIANGLES,
-            shaders.QUAD_INDICES,
-            batch,
-            self,
-            position=("f", shaders.QUAD_CORNER_COORDS),
-        )
-
-    def __hash__(self):
-        return hash(
-            (
-                self.order,
-                self.parent,
-                self.program,
-            )
-        )
-
-    def __eq__(self, other):
-        return (
-            self.__class__ is other.__class__
-            and self.order == other.order
-            and self.program == other.program
-            and self.parent == other.parent
-        )
-
-
 @dataclass
 class CropCorners:
     c1: Vec2 = Vec2()
@@ -209,10 +164,6 @@ class FrameView:
 
         self.group = RenderGroup(self.texture, order=4)
         self.vertex_list = self.group.create_vertex_list(self.batch)
-
-        # self.crop_group = CropRenderGroup(order=5)
-        # self.crop_group.visible = False
-        # self.crop_vertex_list = self.group.create_vertex_list(self.batch)
 
         # Viewport state
         self.model = pyglet.math.Mat4()
