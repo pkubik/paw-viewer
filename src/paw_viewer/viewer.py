@@ -64,6 +64,19 @@ class ViewerWindow(pyglet.window.Window):
 
     def on_key_press(self, symbol, modifiers):
         if pyglet.window.key.MOD_CTRL & modifiers:
+            if symbol == pyglet.window.key.C:
+                coords = self.frame_view.crop_image_coordinates()
+                if coords is not None:
+                    coords_dict = {
+                        "x": [coords.c1.x, coords.c2.x],
+                        "y": [coords.c1.y, coords.c2.y],
+                        "t": [
+                            self.frame_sequence.frame_index,
+                            self.frame_sequence.frame_index + 1,
+                        ],
+                    }
+                    print(f"Crop: {coords_dict}")
+                    self.set_clipboard_text(str(coords_dict))
             if symbol == pyglet.window.key.Q:
                 self.close()
         if symbol == pyglet.window.key.ESCAPE:

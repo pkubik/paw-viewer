@@ -174,9 +174,24 @@ class FrameView:
         self.scroll_speed = 20  # in pixels
         self.crop_corners: CropCorners | None = None
 
-    def crop_image_coordinates(self):
+    def crop_image_coordinates(self, invert_y=True):
+        if self.crop_corners is None:
+            return None
+
         offset = Vec2(self.group.texture.width // 2, self.group.texture.height // 2)
-        return CropCorners(self.crop_corners.c1 + offset, self.crop_corners.c2 + offset)
+        c1 = self.crop_corners.c1 + offset
+        c2 = self.crop_corners.c2 + offset
+
+        x1 = min(c1.x, c2.x)
+        x2 = max(c1.x, c2.x)
+        y1 = min(c1.y, c2.y)
+        y2 = max(c1.y, c2.y)
+
+        if invert_y:
+            # Both subtract from height and swap places to ensure that y2 is larger
+            y1, y2 = self.group.texture.height - y2, self.group.texture.height - y1
+
+        return CropCorners(Vec2(x1, y1), Vec2(x2, y2))
 
     def on_resize(self, width, height):
         self.width = width
@@ -191,13 +206,19 @@ class FrameView:
             self.translation += Vec3(dx, dy, 0)
 
         if buttons & pyglet.window.mouse.RIGHT:
+            max_xy = Vec2(self.group.texture.width // 2, self.group.texture.height // 2)
+            min_xy = -max_xy
+
             if self.crop_corners is None:
                 c1 = ~self.model @ Vec4(x, y, 0.0, 1.0)
                 self.crop_corners = CropCorners()
-                self.crop_corners.c1 = Vec2(round(c1.x), round(c1.y))
+                # TODO: Make sure the rounding is pixel-perfect even for odd texture sizes
+                self.crop_corners.c1 = Vec2(round(c1.x), round(c1.y)).clamp(
+                    min_xy, max_xy
+                )
 
             c2 = ~self.model @ Vec4(x + dx, y + dy, 0.0, 1.0)
-            self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y))
+            self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(min_xy, max_xy)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if buttons & pyglet.window.mouse.RIGHT:
@@ -252,11 +273,10 @@ class FrameView:
                     self.translation - self.cursor_translation
                 ) * scale_factor + self.cursor_translation
 
-        if keys.data.get(pyglet.window.key.LCTRL) and keys.data.get(
-            pyglet.window.key.R
-        ):
-            self.zoom_level.reset()
-            self.translation = Vec3(self.width / 2, self.height / 2, 0)
+        if keys.data.get(pyglet.window.key.LCTRL):
+            if keys.data.get(pyglet.window.key.R):
+                self.zoom_level.reset()
+                self.translation = Vec3(self.width / 2, self.height / 2, 0)
 
         scale = self.zoom_level.scale()
         self.model = Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
