@@ -1,5 +1,6 @@
 import pyglet
 
+from paw_viewer import io
 from paw_viewer.frame_sequence import FrameSequence
 from paw_viewer.frame_view import FrameView
 from paw_viewer.slider import Slider
@@ -64,7 +65,7 @@ class ViewerWindow(pyglet.window.Window):
 
     def on_key_press(self, symbol, modifiers):
         if pyglet.window.key.MOD_CTRL & modifiers:
-            if symbol == pyglet.window.key.C:
+            if symbol == pyglet.window.key.X:
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None:
                     coords_dict = {
@@ -77,6 +78,18 @@ class ViewerWindow(pyglet.window.Window):
                     }
                     print(f"Crop: {coords_dict}")
                     self.set_clipboard_text(str(coords_dict))
+                else:
+                    print("Nothing to crop - no selection")
+            if symbol == pyglet.window.key.C:
+                coords = self.frame_view.crop_image_coordinates()
+                if coords is not None and coords.crop_area() > 0:
+                    t = self.frame_sequence.frame_index
+                    image = self.frame_sequence.frames[
+                        t, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
+                    ]
+                    io.copy_array_to_clipboard(image)
+                else:
+                    print("Nothing to copy - no selection")
             if symbol == pyglet.window.key.Q:
                 self.close()
         if symbol == pyglet.window.key.ESCAPE:

@@ -16,9 +16,9 @@ class FrameSequence:
         self.image_data = pyglet.image.ImageData(
             width=image.shape[1],
             height=image.shape[0],
-            fmt="RGB",
+            fmt="RGBA",
             data=image.tobytes(),
-            pitch=-image.shape[1] * 3,
+            pitch=-image.shape[1] * 4,
         )
         self.texture = self.image_data.get_texture()
 
@@ -32,8 +32,8 @@ class FrameSequence:
     def update_texture(self):
         image = self.frames[self.frame_index]
         self.image_data.set_data(
-            fmt="RGB",
-            pitch=-image.shape[1] * 3,
+            fmt="RGBA",
+            pitch=-image.shape[1] * 4,
             data=image.tobytes(),
         )
         self.texture.blit_into(self.image_data, 0, 0, 0)

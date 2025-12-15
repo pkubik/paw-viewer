@@ -29,54 +29,101 @@ def load_image(image_path):
     return image
 
 
+def auto_adjust_array(data: np.ndarray) -> np.ndarray:
+    """
+    Automatically:
+        - permute array to THWC format
+        - repeat RGB values for grayscale images
+        - pad with 0s for 2-channel images
+        - add alpha channel if there are less than 4 channels
+    """
+    if data.ndim == 2:
+        # Assume grayscale image, convert to 1HW1
+        data = data[np.newaxis, ..., np.newaxis]
+    elif data.ndim == 3:
+        # Add batch dim 1: 1HWC
+        data = data[np.newaxis, ...]
+    elif data.ndim == 4:
+        pass
+    else:
+        raise ValueError(f"Unsupported .npy data shape: {data.shape}")
+
+    largest_dims = sorted(data.shape[1:])[-2:]
+    if min(largest_dims) <= 4:
+        print(
+            f"Warning: The loaded .npy data has very small spatial dimensions {largest_dims}. Assuming channel-last format."
+        )
+        channel_axis = -1
+    else:
+        channel_axis = 1 if data.shape[1] in (1, 3, 4) else -1
+
+    if data.shape[channel_axis] == 1:
+        data = data.repeat(3, axis=channel_axis)
+    elif data.shape[channel_axis] == 2:
+        # Pad to 3 channels with 0s
+        padding_shape = list(data.shape)
+        padding_shape[channel_axis] = 1
+        data = np.concatenate(
+            [
+                data,
+                np.zeros(
+                    padding_shape,
+                    dtype=data.dtype,
+                ),
+            ],
+            axis=channel_axis,
+        )
+
+    # We made sure we have at least 3 channels
+    # Now, ensure there is an alpha channel
+    if data.shape[channel_axis] == 3:
+        # For now, discard alpha channel
+        padding_shape = list(data.shape)
+        padding_shape[channel_axis] = 1
+        data = np.concatenate(
+            [
+                data,
+                255
+                * np.ones(
+                    padding_shape,
+                    dtype=data.dtype,
+                ),
+            ],
+            axis=channel_axis,
+        )
+
+    return data.astype(np.uint8)
+
+
 def auto_load_file(path: str | Path, default_fps: float = 30.0):
     path = Path(path)
+    fps = default_fps
     if path.suffix.lower() in (".mp4", ".avi", ".mov", ".mkv"):
-        return load_video(path)
+        image, fps = load_video(path)
     elif path.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".tiff"):
         image = load_image(path)
-        return image[
-            np.newaxis, ...
-        ], default_fps  # Add batch dimension for consistency
+        image = image[np.newaxis, ...]  # Add batch dimension for consistency
     elif path.suffix.lower() == ".npy":
-        data = np.load(path)
-        if data.ndim == 2:
-            # Assume grayscale image, convert to RGB BHWC
-            data = data[np.newaxis, ..., np.newaxis]
-        elif data.ndim == 3:
-            data = data[np.newaxis, ...]
-        else:
-            raise ValueError(f"Unsupported .npy data shape: {data.shape}")
-
-        largest_dims = sorted(data.shape[1:])[-2:]
-        if min(largest_dims) <= 4:
-            print(
-                f"Warning: The loaded .npy data has very small spatial dimensions {largest_dims}. Assuming channel-last format."
-            )
-            channel_axis = -1
-        else:
-            channel_axis = 1 if data.shape[1] in (1, 3, 4) else -1
-
-        if data.shape[channel_axis] == 1:
-            data = data.repeat(3, axis=channel_axis)
-        elif data.shape[channel_axis] == 2:
-            # Pad to 3 channels with 0s
-            data = np.concatenate(
-                [
-                    data,
-                    np.zeros(
-                        data.shape[:channel_axis]
-                        + (1,)
-                        + data.shape[channel_axis + 1 :],
-                        dtype=data.dtype,
-                    ),
-                ],
-                axis=channel_axis,
-            )
-        elif data.shape[channel_axis] == 4:
-            # For now, discard alpha channel
-            data = data.take(indices=[0, 1, 2], axis=channel_axis)
-
-        return data, default_fps
+        image = np.load(path)
     else:
         raise ValueError("Unsupported file format")
+
+    data = auto_adjust_array(image)
+    return data, fps
+
+
+def copy_array_to_clipboard(image: np.ndarray):
+    # Load dynamically to make it optional
+    try:
+        import copykitten as ck
+    except ImportError:
+        print("Failed to load `copykitten`. Make sure to install extra dependencies.")
+        return
+
+    if np.issubdtype(image.dtype, np.floating):
+        image *= 255
+    ck.copy_image(
+        image.astype(np.uint8).tobytes(),
+        width=image.shape[1],
+        height=image.shape[0],
+    )
