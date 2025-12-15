@@ -1,3 +1,4 @@
+import numpy as np
 import pyglet
 
 from paw_viewer import io
@@ -69,12 +70,12 @@ class ViewerWindow(pyglet.window.Window):
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None:
                     coords_dict = {
-                        "x": [coords.c1.x, coords.c2.x],
-                        "y": [coords.c1.y, coords.c2.y],
                         "t": [
                             self.frame_sequence.frame_index,
                             self.frame_sequence.frame_index + 1,
                         ],
+                        "x": [coords.c1.x, coords.c2.x],
+                        "y": [coords.c1.y, coords.c2.y],
                     }
                     print(f"Crop: {coords_dict}")
                     self.set_clipboard_text(str(coords_dict))
@@ -90,6 +91,21 @@ class ViewerWindow(pyglet.window.Window):
                     io.copy_array_to_clipboard(image)
                 else:
                     print("Nothing to copy - no selection")
+            if symbol == pyglet.window.key.N:
+                coords = self.frame_view.crop_image_coordinates()
+                if coords is not None and coords.crop_area() > 0:
+                    t = self.frame_sequence.frame_index
+                    # TODO: Allow selecting the end frame on the slider
+                    t_end = min(t + 16, len(self.frame_sequence.frames))
+                    data = self.frame_sequence.frames[
+                        t:t_end, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
+                    ]
+                    np.save(
+                        f"crop_{t}-{t_end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy",
+                        data,
+                    )
+                else:
+                    print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:
                 self.close()
         if symbol == pyglet.window.key.ESCAPE:
