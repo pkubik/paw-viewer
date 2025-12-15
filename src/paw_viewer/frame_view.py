@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import TypeGuard
+
 import pyglet
 from pyglet.gl import (
     GL_BLEND,
@@ -17,16 +20,11 @@ from pyglet.gl import (
 )
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram
-from pyglet.math import Mat4, Vec3
+from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from paw_viewer import shaders
 from paw_viewer.frame_sequence import FrameSequence
 from paw_viewer.zoom_level import ZoomLevel
-
-_vertex_source = shaders.load_shader("vertex.glsl")
-_fragment_source = shaders.load_shader("fragment.glsl")
-_background_vertex_source = shaders.load_shader("background_vertex.glsl")
-_background_fragment_source = shaders.load_shader("background_fragment.glsl")
 
 
 class RenderGroup(Group):
@@ -45,8 +43,8 @@ class RenderGroup(Group):
         """
         super().__init__(order, parent)
         self.texture = texture
-        self.vert_shader = Shader(_vertex_source, "vertex")
-        self.frag_shader = Shader(_fragment_source, "fragment")
+        self.vert_shader = Shader(shaders.load_shader("vertex.glsl"), "vertex")
+        self.frag_shader = Shader(shaders.load_shader("fragment.glsl"), "fragment")
         self.program = ShaderProgram(self.vert_shader, self.frag_shader)
 
     def create_vertex_list(self, batch):
@@ -98,8 +96,8 @@ class BackgroundRenderGroup(Group):
     def __init__(self, order=0, parent=None):
         super().__init__(order, parent)
         self.program = ShaderProgram(
-            Shader(_background_vertex_source, "vertex"),
-            Shader(_background_fragment_source, "fragment"),
+            Shader(shaders.load_shader("background_vertex.glsl"), "vertex"),
+            Shader(shaders.load_shader("background_fragment.glsl"), "fragment"),
         )
 
     def set_state(self):
@@ -138,6 +136,61 @@ class BackgroundRenderGroup(Group):
         )
 
 
+class CropRenderGroup(Group):
+    def __init__(self, order=0, parent=None):
+        super().__init__(order, parent)
+        self.program = ShaderProgram(
+            Shader(shaders.load_shader("crop_vertex.glsl"), "vertex"),
+            Shader(shaders.load_shader("crop_fragment.glsl"), "fragment"),
+        )
+
+    def set_state(self):
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self.program.use()
+
+    def unset_state(self):
+        glDisable(GL_BLEND)
+
+    def create_vertex_list(self, batch):
+        return self.program.vertex_list_indexed(
+            4,
+            GL_TRIANGLES,
+            shaders.QUAD_INDICES,
+            batch,
+            self,
+            position=("f", shaders.QUAD_CORNER_COORDS),
+        )
+
+    def __hash__(self):
+        return hash(
+            (
+                self.order,
+                self.parent,
+                self.program,
+            )
+        )
+
+    def __eq__(self, other):
+        return (
+            self.__class__ is other.__class__
+            and self.order == other.order
+            and self.program == other.program
+            and self.parent == other.parent
+        )
+
+
+@dataclass
+class CropCorners:
+    c1: Vec2 = Vec2()
+    c2: Vec2 = Vec2()
+
+    def crop_area(self):
+        width = abs(self.c1.x - self.c2.x)
+        height = abs(self.c1.y - self.c2.y)
+        return width * height
+
+
 class FrameView:
     """Handles the viewport for rendering frames."""
 
@@ -157,6 +210,10 @@ class FrameView:
         self.group = RenderGroup(self.texture, order=4)
         self.vertex_list = self.group.create_vertex_list(self.batch)
 
+        # self.crop_group = CropRenderGroup(order=5)
+        # self.crop_group.visible = False
+        # self.crop_vertex_list = self.group.create_vertex_list(self.batch)
+
         # Viewport state
         self.model = pyglet.math.Mat4()
         self.window_center = Vec3(width / 2, height / 2, 0)
@@ -164,6 +221,11 @@ class FrameView:
         self.translation = Vec3(width / 2, height / 2, 0)
         self.zoom_level = ZoomLevel()
         self.scroll_speed = 20  # in pixels
+        self.crop_corners: CropCorners | None = None
+
+    def crop_image_coordinates(self):
+        offset = Vec2(self.group.texture.width // 2, self.group.texture.height // 2)
+        return CropCorners(self.crop_corners.c1 + offset, self.crop_corners.c2 + offset)
 
     def on_resize(self, width, height):
         self.width = width
@@ -176,6 +238,19 @@ class FrameView:
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if buttons & pyglet.window.mouse.LEFT:
             self.translation += Vec3(dx, dy, 0)
+
+        if buttons & pyglet.window.mouse.RIGHT:
+            if self.crop_corners is None:
+                c1 = ~self.model @ Vec4(x, y, 0.0, 1.0)
+                self.crop_corners = CropCorners()
+                self.crop_corners.c1 = Vec2(round(c1.x), round(c1.y))
+
+            c2 = ~self.model @ Vec4(x + dx, y + dy, 0.0, 1.0)
+            self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y))
+
+    def on_mouse_press(self, x, y, buttons, modifiers):
+        if buttons & pyglet.window.mouse.RIGHT:
+            self.crop_corners = None
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_translation = Vec3(x, y, 0)
@@ -235,3 +310,10 @@ class FrameView:
         scale = self.zoom_level.scale()
         self.model = Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
         self.group.program["model"] = self.model
+
+        crop = self.crop_corners or CropCorners()
+        x1 = crop.c1.x
+        y1 = crop.c1.y
+        x2 = crop.c2.x
+        y2 = crop.c2.y
+        self.group.program["crop_corners"] = Vec4(x1, y1, x2, y2)
