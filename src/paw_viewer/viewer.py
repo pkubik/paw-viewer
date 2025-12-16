@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import numpy as np
 import pyglet
 
@@ -9,9 +12,19 @@ from paw_viewer.slider import Slider
 
 class ViewerWindow(pyglet.window.Window):
     def __init__(
-        self, frame_sequence: FrameSequence, caption="paw", resizable=True, **kwargs
+        self,
+        frame_sequence: FrameSequence,
+        caption="paw",
+        resizable=True,
+        outputs_root: str | Path | None = None,
+        **kwargs,
     ):
         super().__init__(caption=caption, resizable=resizable, **kwargs)
+
+        if outputs_root is None:
+            outputs_root = Path(os.environ.get("PAW_OUTPUTS_ROOT", "."))
+        self.outputs_root = Path(outputs_root)
+
         self.overlay_group = pyglet.graphics.Group(order=8)
         self.batch = pyglet.graphics.Batch()
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
@@ -101,7 +114,8 @@ class ViewerWindow(pyglet.window.Window):
                         t:t_end, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
                     ]
                     np.save(
-                        f"crop_{t}-{t_end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy",
+                        self.outputs_root
+                        / f"crop_{t}-{t_end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy",
                         data,
                     )
                 else:
@@ -112,8 +126,12 @@ class ViewerWindow(pyglet.window.Window):
             return pyglet.event.EVENT_HANDLED
 
 
-def show_video_array(video_array, fps: float = 30):
+def show_video_array(
+    video_array, fps: float = 30, outputs_root: str | Path | None = None
+):
     frame_sequence = FrameSequence(video_array, fps=fps)
-    viewer_window = ViewerWindow(frame_sequence=frame_sequence)
+    viewer_window = ViewerWindow(
+        frame_sequence=frame_sequence, outputs_root=outputs_root
+    )
 
     pyglet.app.run()
