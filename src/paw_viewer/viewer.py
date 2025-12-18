@@ -66,6 +66,10 @@ class ViewerWindow(pyglet.window.Window):
         )
 
     def on_resize(self, width: int, height: int):
+        if self.invalid:
+            # For some reason this event is triggered for uninitialized window,
+            # that is being created after closing a previous one
+            return super().on_resize(width, height)
         self.slider.length = self.width - 2 * self.slider_margin
         self.slider.update_geometry()
         return super().on_resize(width, height)
@@ -135,3 +139,4 @@ def show_video_array(
     )
 
     pyglet.app.run()
+    pyglet.app.exit()
