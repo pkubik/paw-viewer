@@ -5,14 +5,23 @@ import pyglet
 class FrameSequence:
     """Represents a sequence of frames (images) and the texture used for rendering them."""
 
-    def __init__(self, frames: np.ndarray, fps: float = 30):
-        self.frames = frames
+    def __init__(self, sources: dict[str, np.ndarray], fps: float = 30):
+        if len(sources) == 0:
+            raise ValueError("sources must not be empty")
+        self.sources = sources
         self.fps = fps
-        self.num_frames = frames.shape[0]
+        self.active_source = next(iter(self.sources.keys()))
+
+        T, H, W, _ = self.sources[self.active_source].shape
+        if any(source.shape[:3] != (T, H, W) for source in self.sources.values()):
+            raise ValueError("all sources must have the same shape")
+
+        active_frames = self.sources[self.active_source]
+        self.num_frames = active_frames.shape[0]
         self.frame_index = 0
         self.running = False
 
-        image = self.frames[0]
+        image = active_frames[0]
         self.image_data = pyglet.image.ImageData(
             width=image.shape[1],
             height=image.shape[0],
@@ -22,6 +31,10 @@ class FrameSequence:
         )
         self.texture = self.image_data.get_texture()
 
+    @property
+    def frames(self):
+        return self.sources[self.active_source]
+
     def animation_step(self, dt):
         if not self.running:
             # just in case - this should not be called when not running
@@ -30,7 +43,8 @@ class FrameSequence:
         self.update_texture()
 
     def update_texture(self):
-        image = self.frames[self.frame_index]
+        active_frames = self.sources[self.active_source]
+        image = active_frames[self.frame_index]
         self.image_data.set_data(
             fmt="RGBA",
             pitch=-image.shape[1] * 4,
@@ -66,4 +80,16 @@ class FrameSequence:
 
     def go_previous(self):
         self.frame_index = (self.frame_index - 1) % self.num_frames
+        self.update_texture()
+
+    def next_source(self):
+        current_index = list(self.sources.keys()).index(self.active_source)
+        next_index = (current_index + 1) % len(self.sources)
+        self.active_source = list(self.sources.keys())[next_index]
+        self.update_texture()
+
+    def previous_source(self):
+        current_index = list(self.sources.keys()).index(self.active_source)
+        previous_index = (current_index - 1) % len(self.sources)
+        self.active_source = list(self.sources.keys())[previous_index]
         self.update_texture()

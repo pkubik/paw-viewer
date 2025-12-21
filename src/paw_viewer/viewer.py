@@ -133,7 +133,9 @@ class ViewerWindow(pyglet.window.Window):
 def show_video_array(
     video_array, fps: float = 30, outputs_root: str | Path | None = None
 ):
-    frame_sequence = FrameSequence(video_array, fps=fps)
+    frame_sequence = FrameSequence(
+        {"main": video_array, "neg": 255 - video_array // 2}, fps=fps
+    )
     viewer_window = ViewerWindow(
         frame_sequence=frame_sequence, outputs_root=outputs_root
     )

@@ -249,6 +249,12 @@ class FrameView:
                 self.frame_sequence.go_previous()
             if symbol == pyglet.window.key.E:
                 self.frame_sequence.go_end()
+        else:
+            if symbol == pyglet.window.key.X:
+                self.frame_sequence.next_source()
+            if symbol == pyglet.window.key.Z:
+                self.frame_sequence.previous_source()
+
         if symbol == pyglet.window.key.SPACE:
             self.frame_sequence.toggle()
 
