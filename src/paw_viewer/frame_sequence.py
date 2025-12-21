@@ -36,6 +36,9 @@ class FrameSequence:
     def frames(self):
         return self.sources[self.active_source]
 
+    def active_source_name(self):
+        return self.names[self.active_source]
+
     def animation_step(self, dt):
         if not self.running:
             # just in case - this should not be called when not running

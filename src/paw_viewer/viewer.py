@@ -129,6 +129,7 @@ class ViewerWindow(pyglet.window.Window):
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None:
                     coords_dict = {
+                        "source": self.frame_sequence.active_source_name(),
                         "t": [
                             self.frame_sequence.frame_index,
                             self.frame_sequence.frame_index + 1,
@@ -159,11 +160,16 @@ class ViewerWindow(pyglet.window.Window):
                     data = self.frame_sequence.frames[
                         t:t_end, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
                     ]
-                    np.save(
+                    source_name = self.frame_sequence.active_source_name()
+                    output_path = (
                         self.outputs_root
-                        / f"crop_{t}-{t_end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy",
+                        / f"crop_{source_name}_{t}-{t_end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy"
+                    )
+                    np.save(
+                        output_path,
                         data,
                     )
+                    print(f"Saved crop npy as {output_path}")
                 else:
                     print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:
