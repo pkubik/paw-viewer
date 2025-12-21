@@ -8,12 +8,13 @@ class FrameSequence:
     def __init__(self, sources: dict[str, np.ndarray], fps: float = 30):
         if len(sources) == 0:
             raise ValueError("sources must not be empty")
-        self.sources = sources
+        self.sources = list(sources.values())
+        self.names = list(sources.keys())
         self.fps = fps
-        self.active_source = next(iter(self.sources.keys()))
+        self.active_source = 0
 
         T, H, W, _ = self.sources[self.active_source].shape
-        if any(source.shape[:3] != (T, H, W) for source in self.sources.values()):
+        if any(source.shape[:3] != (T, H, W) for source in self.sources):
             raise ValueError("all sources must have the same shape")
 
         active_frames = self.sources[self.active_source]
@@ -83,13 +84,9 @@ class FrameSequence:
         self.update_texture()
 
     def next_source(self):
-        current_index = list(self.sources.keys()).index(self.active_source)
-        next_index = (current_index + 1) % len(self.sources)
-        self.active_source = list(self.sources.keys())[next_index]
+        self.active_source = (self.active_source + 1) % len(self.sources)
         self.update_texture()
 
     def previous_source(self):
-        current_index = list(self.sources.keys()).index(self.active_source)
-        previous_index = (current_index - 1) % len(self.sources)
-        self.active_source = list(self.sources.keys())[previous_index]
+        self.active_source = (self.active_source - 1) % len(self.sources)
         self.update_texture()
