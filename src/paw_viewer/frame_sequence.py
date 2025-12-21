@@ -51,6 +51,9 @@ class FrameSequence:
             pitch=-image.shape[1] * 4,
             data=image.tobytes(),
         )
+        # TODO: This is rather expensive
+        #       Consider keeping whole array as texture
+        #       and only update the coords
         self.texture.blit_into(self.image_data, 0, 0, 0)
 
     def start(self):
