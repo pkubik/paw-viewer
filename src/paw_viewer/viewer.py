@@ -130,11 +130,15 @@ class ViewerWindow(pyglet.window.Window):
             return pyglet.event.EVENT_HANDLED
 
 
-def show_video_array(
-    video_array, fps: float = 30, outputs_root: str | Path | None = None
+def show_video_arrays(
+    video_arrays: dict[str, np.ndarray],
+    fps: float = 30,
+    outputs_root: str | Path | None = None,
 ):
     frame_sequence = FrameSequence(
-        {"main": video_array, "neg": 255 - video_array // 2}, fps=fps
+        # "neg" just for reference now
+        video_arrays,
+        fps=fps,
     )
     viewer_window = ViewerWindow(
         frame_sequence=frame_sequence, outputs_root=outputs_root
@@ -142,3 +146,9 @@ def show_video_array(
 
     pyglet.app.run()
     pyglet.app.exit()
+
+
+def show_video_array(
+    video_array, fps: float = 30, outputs_root: str | Path | None = None
+):
+    show_video_arrays({"": video_array})

@@ -41,8 +41,12 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
         # Assume grayscale image, convert to 1HW1
         data = data[np.newaxis, ..., np.newaxis]
     elif data.ndim == 3:
-        # Add batch dim 1: 1HWC
-        data = data[np.newaxis, ...]
+        last_dim_looks_like_channels = data.shape[-1] <= 4
+        if last_dim_looks_like_channels:
+            # Add batch dim 1: 1HWC
+            data = data[np.newaxis, ...]
+        else:
+            data = data[..., np.newaxis]
     elif data.ndim == 4:
         pass
     else:
@@ -100,16 +104,22 @@ def auto_load_file(path: str | Path, default_fps: float = 30.0):
     fps = default_fps
     if path.suffix.lower() in (".mp4", ".avi", ".mov", ".mkv"):
         image, fps = load_video(path)
+        images = {"": image}
     elif path.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".tiff"):
         image = load_image(path)
         image = image[np.newaxis, ...]  # Add batch dimension for consistency
-    elif path.suffix.lower() == ".npy":
-        image = np.load(path)
+        images = {"": image}
+    elif path.suffix.lower() in (".npy", ".npz"):
+        image_or_dict = np.load(path)
+        if isinstance(image_or_dict, np.ndarray):
+            images = {"": image_or_dict}
+        else:
+            images = image_or_dict
     else:
         raise ValueError("Unsupported file format")
 
-    data = auto_adjust_array(image)
-    return data, fps
+    images = {name: auto_adjust_array(image) for name, image in images.items()}
+    return images, fps
 
 
 def copy_array_to_clipboard(image: np.ndarray):

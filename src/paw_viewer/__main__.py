@@ -1,7 +1,7 @@
 import argparse
 
 from paw_viewer.io import auto_load_file
-from paw_viewer.viewer import show_video_array
+from paw_viewer.viewer import show_video_arrays
 
 
 def main():
@@ -17,11 +17,13 @@ def main():
     )
     args = parser.parse_args()
 
-    video, fps = auto_load_file(args.file)
-    print(f"Loaded frames with shape: {video.shape}, FPS: {fps}")
+    videos, fps = auto_load_file(args.file)
+    print(f"Loaded frames with {int(fps)}fps and shapes:")
+    for name, video in videos.items():
+        print(f"  {name}: {video.shape}")
 
-    show_video_array(
-        video,
+    show_video_arrays(
+        videos,
         fps=args.fps if args.fps is not None else fps,
         outputs_root=args.outputs_root,
     )
