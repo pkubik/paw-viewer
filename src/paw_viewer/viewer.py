@@ -77,7 +77,7 @@ class ViewerWindow(pyglet.window.Window):
                     f"{i + 1:>4}. {name}",
                     x=5,
                     y=500,
-                    font_size=12,
+                    font_size=14,
                     font_name="Lucida Console",
                     batch=self.batch,
                     group=self.overlay_group,
@@ -93,16 +93,18 @@ class ViewerWindow(pyglet.window.Window):
 
     def update_source_labels(self) -> None:
         for i, label in enumerate(self.source_labels):
-            index = i - len(self.source_labels) // 2
+            index = i - self.frame_sequence.active_source
             label.y = self.height // 2 - index * 20
             if i == self.frame_sequence.active_source:
                 label.color = (20, 200, 50, 200)
                 label.weight = "bold"
                 label.x = 16
+                label.font_size = 14
             else:
                 label.color = (110, 140, 120, 150)
                 label.weight = "normal"
                 label.x = 8
+                label.font_size = 12
 
     def on_resize(self, width: int, height: int):
         if self.invalid:
