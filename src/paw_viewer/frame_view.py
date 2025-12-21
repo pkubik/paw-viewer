@@ -153,21 +153,21 @@ class FrameView:
         self,
         width,
         height,
-        frame_sequence: FrameSequenceAnimation,
         batch: pyglet.graphics.Batch,
     ):
         self.width = width
         self.height = height
-        self.frame_sequence = frame_sequence
-        self.texture = frame_sequence.texture
+        self.active_animation_index = None
         self.batch = batch
+        self.animations: list[FrameSequenceAnimation] = []
+        self.names: list[str] = []
 
         # Create render groups
         self.bg_group = BackgroundRenderGroup(order=0)
         self.bg_vertex_list = self.bg_group.create_vertex_list(self.batch)
 
-        self.group = RenderGroup(self.texture, order=4)
-        self.vertex_list = self.group.create_vertex_list(self.batch)
+        self.groups = []
+        self.vertex_lists = []
 
         # Viewport state
         self.model = pyglet.math.Mat4()
@@ -178,11 +178,41 @@ class FrameView:
         self.scroll_speed = 20  # in pixels
         self.crop_corners: CropCorners | None = None
 
+    def add_animation(self, name: str, animation: FrameSequenceAnimation):
+        """
+        Add an animation to the viewer.
+
+        This will not make the new animation active!
+        Follow up with `set_active_animation(-1)` to make the new animation active.
+        """
+        self.names.append(name)
+        self.animations.append(animation)
+        self.groups.append(RenderGroup(animation.texture, order=4))
+        self.vertex_lists.append(self.groups[-1].create_vertex_list(self.batch))
+
+    def active_animation(self) -> None | FrameSequenceAnimation:
+        if self.active_animation_index is None:
+            return None
+        return self.animations[self.active_animation_index]
+
+    def active_frame_index(self) -> int:
+        if self.active_animation_index is None:
+            return 0
+        return self.animations[self.active_animation_index].frame_index
+
+    def set_active_animation(self, index: int = -1):
+        if self.active_animation_index is not None:
+            self.animations[self.active_animation_index].stop()
+            self.groups[self.active_animation_index].visible = False
+        self.active_animation_index = index % len(self.animations)
+        self.groups[self.active_animation_index].visible = True
+
     def crop_image_coordinates(self, invert_y=True):
-        if self.crop_corners is None:
+        if self.active_animation_index is None or self.crop_corners is None:
             return None
 
-        offset = Vec2(self.group.texture.width // 2, self.group.texture.height // 2)
+        group = self.groups[self.active_animation_index]
+        offset = Vec2(group.texture.width // 2, group.texture.height // 2)
         c1 = self.crop_corners.c1 + offset
         c2 = self.crop_corners.c2 + offset
 
@@ -193,7 +223,7 @@ class FrameView:
 
         if invert_y:
             # Both subtract from height and swap places to ensure that y2 is larger
-            y1, y2 = self.group.texture.height - y2, self.group.texture.height - y1
+            y1, y2 = group.texture.height - y2, group.texture.height - y1
 
         return CropCorners(Vec2(x1, y1), Vec2(x2, y2))
 
@@ -206,23 +236,30 @@ class FrameView:
         self.translation += Vec3(center_offset.x, center_offset.y, 0)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self.active_animation_index is None:
+            return
+
         if buttons & pyglet.window.mouse.LEFT:
             self.translation += Vec3(dx, dy, 0)
 
         if buttons & pyglet.window.mouse.RIGHT:
-            max_xy = Vec2(self.group.texture.width // 2, self.group.texture.height // 2)
-            min_xy = -max_xy
+            if self.active_animation_index is not None:
+                group = self.groups[self.active_animation_index]
+                max_xy = Vec2(group.texture.width // 2, group.texture.height // 2)
+                min_xy = -max_xy
 
-            if self.crop_corners is None:
-                c1 = ~self.model @ Vec4(x, y, 0.0, 1.0)
-                self.crop_corners = CropCorners()
-                # TODO: Make sure the rounding is pixel-perfect even for odd texture sizes
-                self.crop_corners.c1 = Vec2(round(c1.x), round(c1.y)).clamp(
+                if self.crop_corners is None:
+                    c1 = ~self.model @ Vec4(x, y, 0.0, 1.0)
+                    self.crop_corners = CropCorners()
+                    # TODO: Make sure the rounding is pixel-perfect even for odd texture sizes
+                    self.crop_corners.c1 = Vec2(round(c1.x), round(c1.y)).clamp(
+                        min_xy, max_xy
+                    )
+
+                c2 = ~self.model @ Vec4(x + dx, y + dy, 0.0, 1.0)
+                self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(
                     min_xy, max_xy
                 )
-
-            c2 = ~self.model @ Vec4(x + dx, y + dy, 0.0, 1.0)
-            self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(min_xy, max_xy)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if buttons & pyglet.window.mouse.RIGHT:
@@ -244,17 +281,19 @@ class FrameView:
             ) * scale_factor + self.cursor_translation
 
     def on_key_press(self, symbol, modifiers):
-        if pyglet.window.key.MOD_CTRL & modifiers:
-            if symbol == pyglet.window.key.S:
-                self.frame_sequence.go_start()
-            if symbol == pyglet.window.key.D:
-                self.frame_sequence.go_next()
-            if symbol == pyglet.window.key.A:
-                self.frame_sequence.go_previous()
-            if symbol == pyglet.window.key.E:
-                self.frame_sequence.go_end()
-        if symbol == pyglet.window.key.SPACE:
-            self.frame_sequence.toggle()
+        if self.active_animation_index is not None:
+            active_animation = self.animations[self.active_animation_index]
+            if pyglet.window.key.MOD_CTRL & modifiers:
+                if symbol == pyglet.window.key.S:
+                    active_animation.go_start()
+                if symbol == pyglet.window.key.D:
+                    active_animation.go_next()
+                if symbol == pyglet.window.key.A:
+                    active_animation.go_previous()
+                if symbol == pyglet.window.key.E:
+                    active_animation.go_end()
+            if symbol == pyglet.window.key.SPACE:
+                active_animation.toggle()
 
     def handle_keys(self, keys: pyglet.window.key.KeyStateHandler):
         if not keys.data.get(pyglet.window.key.LCTRL):
@@ -283,12 +322,16 @@ class FrameView:
                 self.translation = Vec3(self.width / 2, self.height / 2, 0)
 
         scale = self.zoom_level.scale()
-        self.model = Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
-        self.group.program["model"] = self.model
+        if self.active_animation_index is not None:
+            program = self.groups[self.active_animation_index].program
+            self.model = (
+                Mat4().translate(self.translation).scale(Vec3(scale, scale, 1.0))
+            )
+            program["model"] = self.model
 
-        crop = self.crop_corners or CropCorners()
-        x1 = crop.c1.x
-        y1 = crop.c1.y
-        x2 = crop.c2.x
-        y2 = crop.c2.y
-        self.group.program["crop_corners"] = Vec4(x1, y1, x2, y2)
+            crop = self.crop_corners or CropCorners()
+            x1 = crop.c1.x
+            y1 = crop.c1.y
+            x2 = crop.c2.x
+            y2 = crop.c2.y
+            program["crop_corners"] = Vec4(x1, y1, x2, y2)
