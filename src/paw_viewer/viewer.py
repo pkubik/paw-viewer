@@ -5,7 +5,7 @@ import numpy as np
 import pyglet
 
 from paw_viewer import io
-from paw_viewer.frame_sequence import FrameSequence
+from paw_viewer.frame_sequence import FrameSequence, FrameSequenceAnimation
 from paw_viewer.frame_view import FrameView
 from paw_viewer.slider import Slider
 
@@ -13,7 +13,7 @@ from paw_viewer.slider import Slider
 class ViewerWindow(pyglet.window.Window):
     def __init__(
         self,
-        frame_sequence: FrameSequence,
+        frame_sequence: FrameSequenceAnimation,
         caption="paw",
         resizable=True,
         outputs_root: str | Path | None = None,
@@ -130,13 +130,22 @@ class ViewerWindow(pyglet.window.Window):
             return pyglet.event.EVENT_HANDLED
 
 
-def show_video_array(
-    video_array, fps: float = 30, outputs_root: str | Path | None = None
+def show_frame_sequence(
+    frame_sequence: FrameSequence,
+    outputs_root: str | Path | None = None,
 ):
-    frame_sequence = FrameSequence(video_array, fps=fps)
     viewer_window = ViewerWindow(
-        frame_sequence=frame_sequence, outputs_root=outputs_root
+        frame_sequence=FrameSequenceAnimation(frame_sequence),
+        outputs_root=outputs_root,
     )
 
     pyglet.app.run()
     pyglet.app.exit()
+
+
+def show_video_array(
+    video_array, fps: float = 30, outputs_root: str | Path | None = None
+):
+    return show_frame_sequence(
+        FrameSequence(video_array, fps=fps), outputs_root=outputs_root
+    )

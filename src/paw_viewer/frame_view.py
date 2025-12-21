@@ -22,7 +22,7 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from paw_viewer import shaders
-from paw_viewer.frame_sequence import FrameSequence
+from paw_viewer.frame_sequence import FrameSequenceAnimation
 from paw_viewer.zoom_level import ZoomLevel
 
 
@@ -150,7 +150,11 @@ class FrameView:
     """Handles the viewport for rendering frames."""
 
     def __init__(
-        self, width, height, frame_sequence: FrameSequence, batch: pyglet.graphics.Batch
+        self,
+        width,
+        height,
+        frame_sequence: FrameSequenceAnimation,
+        batch: pyglet.graphics.Batch,
     ):
         self.width = width
         self.height = height

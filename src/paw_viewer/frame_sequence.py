@@ -1,14 +1,22 @@
+from dataclasses import dataclass
+
 import numpy as np
 import pyglet
 
 
+@dataclass
 class FrameSequence:
+    frames: np.ndarray
+    fps: float = 30
+
+
+class FrameSequenceAnimation:
     """Represents a sequence of frames (images) and the texture used for rendering them."""
 
-    def __init__(self, frames: np.ndarray, fps: float = 30):
-        self.frames = frames
-        self.fps = fps
-        self.num_frames = frames.shape[0]
+    def __init__(self, frame_sequence: FrameSequence):
+        self.frames = frame_sequence.frames
+        self.fps = frame_sequence.fps
+        self.num_frames = frame_sequence.frames.shape[0]
         self.frame_index = 0
         self.running = False
 
