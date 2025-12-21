@@ -41,6 +41,10 @@ class ViewerWindow(pyglet.window.Window):
         )
         self.push_handlers(self.frame_view)
 
+        @self.frame_view.event
+        def on_source_change(source):
+            self.update_source_labels()
+
         self.slider_margin = 200
         self.slider = Slider(
             x=self.slider_margin,
@@ -59,11 +63,46 @@ class ViewerWindow(pyglet.window.Window):
 
         self.label = pyglet.text.Label(
             "Zoom: 100%",
-            x=5,
-            y=5,
+            x=16,
+            y=16,
+            font_size=16,
+            font_name="Lucida Console",
             batch=self.batch,
             group=self.overlay_group,
         )
+
+        if len(self.frame_sequence.names) > 1:
+            self.source_labels = [
+                pyglet.text.Label(
+                    f"{i + 1:>4}. {name}",
+                    x=5,
+                    y=500,
+                    font_size=12,
+                    font_name="Lucida Console",
+                    batch=self.batch,
+                    group=self.overlay_group,
+                    anchor_x="left",
+                )
+                for i, name in enumerate(self.frame_sequence.names)
+            ]
+            self.update_source_labels()
+        else:
+            self.source_labels = []
+
+        self.invalid = False
+
+    def update_source_labels(self) -> None:
+        for i, label in enumerate(self.source_labels):
+            index = i - len(self.source_labels) // 2
+            label.y = self.height // 2 - index * 20
+            if i == self.frame_sequence.active_source:
+                label.color = (20, 200, 50, 200)
+                label.weight = "bold"
+                label.x = 16
+            else:
+                label.color = (110, 140, 120, 150)
+                label.weight = "normal"
+                label.x = 8
 
     def on_resize(self, width: int, height: int):
         if self.invalid:
@@ -72,6 +111,7 @@ class ViewerWindow(pyglet.window.Window):
             return super().on_resize(width, height)
         self.slider.length = self.width - 2 * self.slider_margin
         self.slider.update_geometry()
+        self.update_source_labels()
         return super().on_resize(width, height)
 
     def on_draw(self):

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import pyglet
+from pyglet.event import EventDispatcher
 from pyglet.gl import (
     GL_BLEND,
     GL_NEAREST,
@@ -146,7 +147,7 @@ class CropCorners:
         return width * height
 
 
-class FrameView:
+class FrameView(EventDispatcher):
     """Handles the viewport for rendering frames."""
 
     def __init__(
@@ -173,6 +174,8 @@ class FrameView:
         self.zoom_level = ZoomLevel()
         self.scroll_speed = 20  # in pixels
         self.crop_corners: CropCorners | None = None
+
+        self.register_event_type("on_source_change")
 
     def crop_image_coordinates(self, invert_y=True):
         if self.crop_corners is None:
@@ -252,8 +255,14 @@ class FrameView:
         else:
             if symbol == pyglet.window.key.X:
                 self.frame_sequence.next_source()
+                self.dispatch_event(
+                    "on_source_change", self.frame_sequence.active_source
+                )
             if symbol == pyglet.window.key.Z:
                 self.frame_sequence.previous_source()
+                self.dispatch_event(
+                    "on_source_change", self.frame_sequence.active_source
+                )
 
         if symbol == pyglet.window.key.SPACE:
             self.frame_sequence.toggle()
