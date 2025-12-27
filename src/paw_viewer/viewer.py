@@ -5,7 +5,7 @@ import numpy as np
 import pyglet
 
 from paw_viewer import io
-from paw_viewer.frame_sequence import FrameSequence
+from paw_viewer.frame_sequence import Animation
 from paw_viewer.frame_view import FrameView
 from paw_viewer.slider import Slider
 
@@ -13,7 +13,7 @@ from paw_viewer.slider import Slider
 class ViewerWindow(pyglet.window.Window):
     def __init__(
         self,
-        frame_sequence: FrameSequence,
+        frame_sequence: Animation,
         caption="paw",
         resizable=True,
         outputs_root: str | Path | None = None,
@@ -182,7 +182,7 @@ def show_video_arrays(
     fps: float = 30,
     outputs_root: str | Path | None = None,
 ):
-    frame_sequence = FrameSequence(
+    frame_sequence = Animation(
         # "neg" just for reference now
         video_arrays,
         fps=fps,

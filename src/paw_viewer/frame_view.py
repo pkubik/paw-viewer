@@ -19,12 +19,12 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from paw_viewer import shaders
-from paw_viewer.frame_sequence import FrameSequence
+from paw_viewer.frame_sequence import Animation
 from paw_viewer.zoom_level import ZoomLevel
 
 
 class RenderGroup(Group):
-    def __init__(self, animation: FrameSequence, order=0, parent=None):
+    def __init__(self, animation: Animation, order=0, parent=None):
         """Create a RenderGroup.
 
         :Parameters:
@@ -147,7 +147,7 @@ class FrameView(EventDispatcher):
     """Handles the viewport for rendering frames."""
 
     def __init__(
-        self, width, height, animation: FrameSequence, batch: pyglet.graphics.Batch
+        self, width, height, animation: Animation, batch: pyglet.graphics.Batch
     ):
         self.width = width
         self.height = height

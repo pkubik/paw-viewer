@@ -3,8 +3,15 @@ import pyglet
 from pyglet.gl import GL_NEAREST
 
 
-class FrameSequence:
-    """Represents a sequence of frames (images) and the texture used for rendering them."""
+class Animation:
+    """
+    Represents a sequence of frames split into multiple sources.
+
+    Each source represent a different way of capturing the same scene,
+    e.g. final image color with different graphic settings, texture albedos, depth.
+
+    Each source capture consists of the same number of same-sized frames.
+    """
 
     def __init__(self, sources: dict[str, np.ndarray], fps: float = 30):
         if len(sources) == 0:
