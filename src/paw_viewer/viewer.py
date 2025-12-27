@@ -5,7 +5,7 @@ import numpy as np
 import pyglet
 
 from paw_viewer import io
-from paw_viewer.frame_sequence import FrameSequence
+from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
 from paw_viewer.slider import Slider
 
@@ -13,7 +13,7 @@ from paw_viewer.slider import Slider
 class ViewerWindow(pyglet.window.Window):
     def __init__(
         self,
-        frame_sequence: FrameSequence,
+        animation: Animation,
         caption="paw",
         resizable=True,
         outputs_root: str | Path | None = None,
@@ -29,14 +29,14 @@ class ViewerWindow(pyglet.window.Window):
         self.batch = pyglet.graphics.Batch()
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
 
-        self.frame_sequence = frame_sequence
+        self.animation = animation
         self.key_state = pyglet.window.key.KeyStateHandler()
         self.push_handlers(self.key_state)
 
         self.frame_view = FrameView(
             self.width,
             self.height,
-            self.frame_sequence,
+            self.animation,
             batch=self.batch,
         )
         self.push_handlers(self.frame_view)
@@ -50,7 +50,7 @@ class ViewerWindow(pyglet.window.Window):
             x=self.slider_margin,
             y=20,
             length=self.width - 2 * self.slider_margin,
-            steps=self.frame_sequence.num_frames,
+            steps=self.animation.num_frames,
             batch=self.batch,
             parent_group=self.overlay_group,
         )
@@ -58,8 +58,7 @@ class ViewerWindow(pyglet.window.Window):
 
         @self.slider.event
         def on_change(value):
-            self.frame_sequence.frame_index = value
-            self.frame_sequence.update_texture()
+            self.animation.frame_index = value
 
         self.label = pyglet.text.Label(
             "Zoom: 100%",
@@ -71,7 +70,7 @@ class ViewerWindow(pyglet.window.Window):
             group=self.overlay_group,
         )
 
-        if len(self.frame_sequence.names) > 1:
+        if len(self.animation.names) > 1:
             self.source_labels = [
                 pyglet.text.Label(
                     f"{i + 1:>4}. {name}",
@@ -83,7 +82,7 @@ class ViewerWindow(pyglet.window.Window):
                     group=self.overlay_group,
                     anchor_x="left",
                 )
-                for i, name in enumerate(self.frame_sequence.names)
+                for i, name in enumerate(self.animation.names)
             ]
             self.update_source_labels()
         else:
@@ -93,9 +92,9 @@ class ViewerWindow(pyglet.window.Window):
 
     def update_source_labels(self) -> None:
         for i, label in enumerate(self.source_labels):
-            index = i - self.frame_sequence.active_source
+            index = i - self.animation.active_source
             label.y = self.height // 2 - index * 20
-            if i == self.frame_sequence.active_source:
+            if i == self.animation.active_source:
                 label.color = (20, 200, 50, 200)
                 label.weight = "bold"
                 label.x = 16
@@ -118,7 +117,7 @@ class ViewerWindow(pyglet.window.Window):
 
     def on_draw(self):
         self.frame_view.handle_keys(self.key_state)
-        self.slider.update_step(self.frame_sequence.frame_index)
+        self.slider.update_step(self.animation.frame_index)
         self.label.text = f"Zoom: {int(self.frame_view.zoom_level.scale() * 100)}%"
         self.clear()
         self.batch.draw()
@@ -129,10 +128,10 @@ class ViewerWindow(pyglet.window.Window):
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None:
                     coords_dict = {
-                        "source": self.frame_sequence.active_source_name(),
+                        "source": self.animation.active_source_name(),
                         "t": [
-                            self.frame_sequence.frame_index,
-                            self.frame_sequence.frame_index + 1,
+                            self.animation.frame_index,
+                            self.animation.frame_index + 1,
                         ],
                         "x": [coords.c1.x, coords.c2.x],
                         "y": [coords.c1.y, coords.c2.y],
@@ -144,8 +143,8 @@ class ViewerWindow(pyglet.window.Window):
             if symbol == pyglet.window.key.C:
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None and coords.crop_area() > 0:
-                    t = self.frame_sequence.frame_index
-                    image = self.frame_sequence.frames[
+                    t = self.animation.frame_index
+                    image = self.animation.frames[
                         t, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
                     ]
                     io.copy_array_to_clipboard(image)
@@ -154,13 +153,13 @@ class ViewerWindow(pyglet.window.Window):
             if symbol == pyglet.window.key.N:
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None and coords.crop_area() > 0:
-                    t = self.frame_sequence.frame_index
+                    t = self.animation.frame_index
                     # TODO: Allow selecting the end frame on the slider
-                    t_end = min(t + 16, len(self.frame_sequence.frames))
-                    data = self.frame_sequence.frames[
+                    t_end = min(t + 16, len(self.animation.frames))
+                    data = self.animation.frames[
                         t:t_end, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
                     ]
-                    source_name = self.frame_sequence.active_source_name()
+                    source_name = self.animation.active_source_name()
                     output_path = (
                         self.outputs_root
                         / f"crop_{source_name}_{t}-{t_end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy"
@@ -183,14 +182,12 @@ def show_video_arrays(
     fps: float = 30,
     outputs_root: str | Path | None = None,
 ):
-    frame_sequence = FrameSequence(
+    animation = Animation(
         # "neg" just for reference now
         video_arrays,
         fps=fps,
     )
-    viewer_window = ViewerWindow(
-        frame_sequence=frame_sequence, outputs_root=outputs_root
-    )
+    viewer_window = ViewerWindow(animation=animation, outputs_root=outputs_root)
 
     pyglet.app.run()
     pyglet.app.exit()
