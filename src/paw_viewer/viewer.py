@@ -5,7 +5,7 @@ import numpy as np
 import pyglet
 
 from paw_viewer import io
-from paw_viewer.frame_sequence import Animation
+from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
 from paw_viewer.slider import Slider
 

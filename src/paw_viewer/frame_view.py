@@ -19,7 +19,7 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from paw_viewer import shaders
-from paw_viewer.frame_sequence import Animation
+from paw_viewer.animation import Animation
 from paw_viewer.zoom_level import ZoomLevel
 
 
