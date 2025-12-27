@@ -1,5 +1,6 @@
 import numpy as np
 import pyglet
+from pyglet.gl import GL_NEAREST
 
 
 class FrameSequence:
@@ -22,19 +23,31 @@ class FrameSequence:
         self.frame_index = 0
         self.running = False
 
-        image = active_frames[0]
-        self.image_data = pyglet.image.ImageData(
-            width=image.shape[1],
-            height=image.shape[0],
-            fmt="RGBA",
-            data=image.tobytes(),
-            pitch=-image.shape[1] * 4,
-        )
-        self.texture = self.image_data.get_texture()
+        self.per_source_textures = [
+            [
+                pyglet.image.Texture.create(
+                    width=W,
+                    height=H,
+                    min_filter=GL_NEAREST,
+                    mag_filter=GL_NEAREST,
+                )
+                for _ in range(T)
+            ]
+            for _ in self.sources
+        ]
+        self._update_textures()
 
     @property
     def frames(self):
         return self.sources[self.active_source]
+
+    @property
+    def active_textures(self):
+        return self.per_source_textures[self.active_source]
+
+    @property
+    def active_texture(self) -> pyglet.image.Texture:
+        return self.active_textures[self.frame_index]
 
     def active_source_name(self):
         return self.names[self.active_source]
@@ -44,20 +57,27 @@ class FrameSequence:
             # just in case - this should not be called when not running
             return
         self.frame_index = (self.frame_index + 1) % self.num_frames
-        self.update_texture()
 
-    def update_texture(self):
-        active_frames = self.sources[self.active_source]
-        image = active_frames[self.frame_index]
-        self.image_data.set_data(
-            fmt="RGBA",
-            pitch=-image.shape[1] * 4,
-            data=image.tobytes(),
-        )
-        # TODO: This is rather expensive
-        #       Consider keeping whole array as texture
-        #       and only update the coords
-        self.texture.blit_into(self.image_data, 0, 0, 0)
+    def _update_textures(self):
+        """Should be called only after setting sources (i.e. in init)"""
+        from ctypes import POINTER, c_uint8
+
+        from pyglet import gl
+
+        for frames, textures in zip(self.sources, self.per_source_textures):
+            for image, texture in zip(frames, textures):
+                gl.glBindTexture(texture.target, texture.id)
+                gl.glTexImage2D(
+                    texture.target,  # target
+                    0,  # level
+                    gl.GL_RGBA8,  # internalformat
+                    texture.width,  # width
+                    texture.height,  # height
+                    0,  # border
+                    gl.GL_RGBA,  # format
+                    gl.GL_UNSIGNED_BYTE,  # type
+                    image.ctypes.data_as(POINTER(c_uint8)),  # pixels
+                )
 
     def start(self):
         pyglet.clock.schedule_interval(self.animation_step, 1 / self.fps)
@@ -75,24 +95,18 @@ class FrameSequence:
 
     def go_start(self):
         self.frame_index = 0
-        self.update_texture()
 
     def go_end(self):
         self.frame_index = self.num_frames - 1
-        self.update_texture()
 
     def go_next(self):
         self.frame_index = (self.frame_index + 1) % self.num_frames
-        self.update_texture()
 
     def go_previous(self):
         self.frame_index = (self.frame_index - 1) % self.num_frames
-        self.update_texture()
 
     def next_source(self):
         self.active_source = (self.active_source + 1) % len(self.sources)
-        self.update_texture()
 
     def previous_source(self):
         self.active_source = (self.active_source - 1) % len(self.sources)
-        self.update_texture()

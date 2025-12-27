@@ -8,7 +8,9 @@ uniform sampler2D our_texture;
 
 void main()
 {
-    final_colors = texture(our_texture, texture_coords.xy);
+    // Flip Y here to avoid doing that when copying images to textures
+    vec2 uv = vec2(texture_coords.x, 1. - texture_coords.y);
+    final_colors = texture(our_texture, uv);
 
     vec2 bottom_left = min(frag_crop_corners.xy, frag_crop_corners.zw);
     vec2 top_right = max(frag_crop_corners.xy, frag_crop_corners.zw);

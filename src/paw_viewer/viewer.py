@@ -59,7 +59,6 @@ class ViewerWindow(pyglet.window.Window):
         @self.slider.event
         def on_change(value):
             self.frame_sequence.frame_index = value
-            self.frame_sequence.update_texture()
 
         self.label = pyglet.text.Label(
             "Zoom: 100%",

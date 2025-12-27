@@ -4,19 +4,15 @@ import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.gl import (
     GL_BLEND,
-    GL_NEAREST,
     GL_ONE_MINUS_SRC_ALPHA,
     GL_SRC_ALPHA,
     GL_TEXTURE0,
-    GL_TEXTURE_MAG_FILTER,
-    GL_TEXTURE_MIN_FILTER,
     GL_TRIANGLES,
     glActiveTexture,
     glBindTexture,
     glBlendFunc,
     glDisable,
     glEnable,
-    glTexParameteri,
 )
 from pyglet.graphics import Group
 from pyglet.graphics.shader import Shader, ShaderProgram
@@ -28,7 +24,7 @@ from paw_viewer.zoom_level import ZoomLevel
 
 
 class RenderGroup(Group):
-    def __init__(self, texture, order=0, parent=None):
+    def __init__(self, animation: FrameSequence, order=0, parent=None):
         """Create a RenderGroup.
 
         :Parameters:
@@ -42,7 +38,7 @@ class RenderGroup(Group):
                 Parent group.
         """
         super().__init__(order, parent)
-        self.texture = texture
+        self.animation = animation
         self.vert_shader = Shader(shaders.load_shader("vertex.glsl"), "vertex")
         self.frag_shader = Shader(shaders.load_shader("fragment.glsl"), "fragment")
         self.program = ShaderProgram(self.vert_shader, self.frag_shader)
@@ -54,15 +50,17 @@ class RenderGroup(Group):
             shaders.QUAD_INDICES,
             batch,
             self,
-            position=("f", shaders.create_quad_from_texture(self.texture)),
-            tex_coords=("f", self.texture.tex_coords),
+            position=(
+                "f",
+                shaders.create_quad_from_texture(self.animation.active_texture),
+            ),
+            tex_coords=("f", self.animation.active_texture.tex_coords),
         )
 
     def set_state(self):
+        texture = self.animation.active_texture
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(self.texture.target, self.texture.id)
-        glTexParameteri(self.texture.target, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
-        glTexParameteri(self.texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glBindTexture(texture.target, texture.id)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
         self.program.use()
@@ -73,8 +71,7 @@ class RenderGroup(Group):
     def __hash__(self):
         return hash(
             (
-                self.texture.target,
-                self.texture.id,
+                id(self.animation),
                 self.order,
                 self.parent,
                 self.program,
@@ -84,8 +81,7 @@ class RenderGroup(Group):
     def __eq__(self, other):
         return (
             self.__class__ is other.__class__
-            and self.texture.target == other.texture.target
-            and self.texture.id == other.texture.id
+            and id(self.animation) == id(other.animation)
             and self.order == other.order
             and self.program == other.program
             and self.parent == other.parent
@@ -151,19 +147,18 @@ class FrameView(EventDispatcher):
     """Handles the viewport for rendering frames."""
 
     def __init__(
-        self, width, height, frame_sequence: FrameSequence, batch: pyglet.graphics.Batch
+        self, width, height, animation: FrameSequence, batch: pyglet.graphics.Batch
     ):
         self.width = width
         self.height = height
-        self.frame_sequence = frame_sequence
-        self.texture = frame_sequence.texture
+        self.animation = animation
         self.batch = batch
 
         # Create render groups
         self.bg_group = BackgroundRenderGroup(order=0)
         self.bg_vertex_list = self.bg_group.create_vertex_list(self.batch)
 
-        self.group = RenderGroup(self.texture, order=4)
+        self.group = RenderGroup(self.animation, order=4)
         self.vertex_list = self.group.create_vertex_list(self.batch)
 
         # Viewport state
@@ -181,7 +176,8 @@ class FrameView(EventDispatcher):
         if self.crop_corners is None:
             return None
 
-        offset = Vec2(self.group.texture.width // 2, self.group.texture.height // 2)
+        texture = self.animation.active_texture
+        offset = Vec2(texture.width // 2, texture.height // 2)
         c1 = self.crop_corners.c1 + offset
         c2 = self.crop_corners.c2 + offset
 
@@ -192,7 +188,7 @@ class FrameView(EventDispatcher):
 
         if invert_y:
             # Both subtract from height and swap places to ensure that y2 is larger
-            y1, y2 = self.group.texture.height - y2, self.group.texture.height - y1
+            y1, y2 = texture.height - y2, texture.height - y1
 
         return CropCorners(Vec2(x1, y1), Vec2(x2, y2))
 
@@ -209,7 +205,8 @@ class FrameView(EventDispatcher):
             self.translation += Vec3(dx, dy, 0)
 
         if buttons & pyglet.window.mouse.RIGHT:
-            max_xy = Vec2(self.group.texture.width // 2, self.group.texture.height // 2)
+            texture = self.animation.active_texture
+            max_xy = Vec2(texture.width // 2, texture.height // 2)
             min_xy = -max_xy
 
             if self.crop_corners is None:
@@ -245,27 +242,23 @@ class FrameView(EventDispatcher):
     def on_key_press(self, symbol, modifiers):
         if pyglet.window.key.MOD_CTRL & modifiers:
             if symbol == pyglet.window.key.S:
-                self.frame_sequence.go_start()
+                self.animation.go_start()
             if symbol == pyglet.window.key.D:
-                self.frame_sequence.go_next()
+                self.animation.go_next()
             if symbol == pyglet.window.key.A:
-                self.frame_sequence.go_previous()
+                self.animation.go_previous()
             if symbol == pyglet.window.key.E:
-                self.frame_sequence.go_end()
+                self.animation.go_end()
         else:
             if symbol == pyglet.window.key.X:
-                self.frame_sequence.next_source()
-                self.dispatch_event(
-                    "on_source_change", self.frame_sequence.active_source
-                )
+                self.animation.next_source()
+                self.dispatch_event("on_source_change", self.animation.active_source)
             if symbol == pyglet.window.key.Z:
-                self.frame_sequence.previous_source()
-                self.dispatch_event(
-                    "on_source_change", self.frame_sequence.active_source
-                )
+                self.animation.previous_source()
+                self.dispatch_event("on_source_change", self.animation.active_source)
 
         if symbol == pyglet.window.key.SPACE:
-            self.frame_sequence.toggle()
+            self.animation.toggle()
 
     def handle_keys(self, keys: pyglet.window.key.KeyStateHandler):
         if not keys.data.get(pyglet.window.key.LCTRL):
