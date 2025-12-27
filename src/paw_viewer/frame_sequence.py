@@ -1,5 +1,6 @@
 import numpy as np
 import pyglet
+from pyglet.gl import GL_RGBA32F
 
 
 class FrameSequence:
@@ -23,14 +24,10 @@ class FrameSequence:
         self.running = False
 
         image = active_frames[0]
-        self.image_data = pyglet.image.ImageData(
-            width=image.shape[1],
-            height=image.shape[0],
-            fmt="RGBA",
-            data=image.tobytes(),
-            pitch=-image.shape[1] * 4,
+        self.texture = pyglet.image.Texture.create(
+            width=image.shape[1], height=image.shape[0], internalformat=GL_RGBA32F
         )
-        self.texture = self.image_data.get_texture()
+        self.update_texture()
 
     @property
     def frames(self):
@@ -47,17 +44,26 @@ class FrameSequence:
         self.update_texture()
 
     def update_texture(self):
+        from ctypes import POINTER, c_float
+
+        from pyglet import gl
+
         active_frames = self.sources[self.active_source]
         image = active_frames[self.frame_index]
-        self.image_data.set_data(
-            fmt="RGBA",
-            pitch=-image.shape[1] * 4,
-            data=image.tobytes(),
+
+        gl.glBindTexture(self.texture.target, self.texture.id)
+        image_f32: np.ndarray = image[::-1, :, :].astype(np.float32) / 255
+        gl.glTexImage2D(
+            self.texture.target,
+            0,
+            gl.GL_RGBA32F,  # internal format
+            self.texture.width,
+            self.texture.height,
+            0,
+            gl.GL_RGBA,
+            gl.GL_FLOAT,
+            image_f32.ctypes.data_as(POINTER(c_float)),
         )
-        # TODO: This is rather expensive
-        #       Consider keeping whole array as texture
-        #       and only update the coords
-        self.texture.blit_into(self.image_data, 0, 0, 0)
 
     def start(self):
         pyglet.clock.schedule_interval(self.animation_step, 1 / self.fps)
