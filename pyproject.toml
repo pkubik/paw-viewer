@@ -5,10 +5,15 @@ description = "A simple ndarray image/video viewer"
 readme = "README.md"
 authors = [{ name = "Pawel Kubik", email = "p.kubik.pl@gmail.com" }]
 requires-python = ">=3.11"
-dependencies = ["numpy>=2.3.5", "pyglet>=2.1.11"]
+dependencies = [
+    "numpy>=2.3.5",
+    "pyglet>=2.1.11",
+    "opencv-python>=4.11.0.86",
+    "openexr>=3.4.4",
+    "copykitten>=2.0.0",
+]
 
 [dependency-groups]
-opencv = ["opencv-python>=4.11.0.86"]
 dev = [
     {include-group = "lint"},
     {include-group = "test"}
@@ -21,7 +26,7 @@ test = [
 ]
 
 [tool.uv]
-default-groups = ["dev", "opencv"]
+default-groups = ["dev"]
 
 [build-system]
 requires = ["uv_build>=0.9.13,<0.10.0"]

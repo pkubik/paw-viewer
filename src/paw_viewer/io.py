@@ -1,4 +1,5 @@
 from pathlib import Path
+import logging
 
 import numpy as np
 
@@ -27,6 +28,53 @@ def load_image(image_path):
     image = cv2.imread(str(image_path))
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     return image
+
+
+def same_exr_windows(exr_header) -> bool:
+    return np.all(
+        np.all(v1 == v2)
+        for v1, v2 in zip(exr_header["dataWindow"], exr_header["displayWindow"])
+    )
+
+
+def load_exr(path: str | Path) -> dict:
+    import OpenEXR
+
+    exr = OpenEXR.File(str(path))
+    exr_header = exr.header()
+    if not same_exr_windows(exr_header):
+        logging.warning(
+            "The EXR file has different dataWindow and displayWindow. Cropping is not implemented."
+        )
+
+    view_names = exr_header.get("multiView", [""])
+    main_view_name = view_names[0]
+
+    channel_letters = {}
+    for spec in exr_header["channels"]:
+        match spec.name.split("."):
+            case prefix, channel:
+                channel_letters.setdefault(prefix, []).append(channel)
+            case channel:
+                channel_letters.setdefault(main_view_name, []).append(channel)
+
+    images = {}
+    for name, view in exr.channels().items():
+        match name.split("."):
+            case prefix, channels:
+                if channels != "".join(channel_letters[prefix]):
+                    logging.warning(f"Skipping incomplete EXR channel {name}")
+                    continue
+                images[prefix] = view.pixels
+            case (prefix_or_channels,):
+                if prefix_or_channels in view_names:
+                    prefix = prefix_or_channels
+                    images[prefix] = view.pixels
+                else:
+                    images[main_view_name] = view.pixels
+
+    images = {name: (view * 255).astype(np.uint8) for name, view in images.items()}
+    return images
 
 
 def auto_adjust_array(data: np.ndarray) -> np.ndarray:
@@ -105,6 +153,8 @@ def auto_load_file(path: str | Path, default_fps: float = 30.0):
     if path.suffix.lower() in (".mp4", ".avi", ".mov", ".mkv"):
         image, fps = load_video(path)
         images = {"": image}
+    elif path.suffix.lower() == ".exr":
+        images = load_exr(path)
     elif path.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".tiff"):
         image = load_image(path)
         image = image[np.newaxis, ...]  # Add batch dimension for consistency
