@@ -73,7 +73,11 @@ def load_exr(path: str | Path) -> dict:
                 else:
                     images[main_view_name] = view.pixels
 
-    images = {name: (view * 255).astype(np.uint8) for name, view in images.items()}
+    images = {
+        name: (255 * view ** (1 / 2.2)).clip(0, 255).astype(np.uint8)
+        for name, view in images.items()
+    }
+
     return images
 
 
