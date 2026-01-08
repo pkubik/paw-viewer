@@ -73,11 +73,6 @@ def load_exr(path: str | Path) -> dict:
                 else:
                     images[main_view_name] = view.pixels
 
-    images = {
-        name: (255 * view ** (1 / 2.2)).clip(0, 255).astype(np.uint8)
-        for name, view in images.items()
-    }
-
     return images
 
 
@@ -132,6 +127,7 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
 
     # We made sure we have at least 3 channels
     # Now, ensure there is an alpha channel
+    max_value = 255 if np.issubdtype(data.dtype, np.integer) else 1.0
     if data.shape[channel_axis] == 3:
         # For now, discard alpha channel
         padding_shape = list(data.shape)
@@ -139,7 +135,7 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
         data = np.concatenate(
             [
                 data,
-                255
+                max_value
                 * np.ones(
                     padding_shape,
                     dtype=data.dtype,
@@ -148,7 +144,7 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
             axis=channel_axis,
         )
 
-    return data.astype(np.uint8)
+    return data
 
 
 def auto_load_file(path: str | Path, default_fps: float = 30.0):
