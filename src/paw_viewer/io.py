@@ -73,6 +73,11 @@ def load_exr(path: str | Path) -> dict:
                 else:
                     images[main_view_name] = view.pixels
 
+    images = {
+        name: (255 * view ** (1 / 2.2)).clip(0, 255).astype(np.uint8)
+        for name, view in images.items()
+    }
+
     return images
 
 
@@ -98,10 +103,6 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
         pass
     else:
         raise ValueError(f"Unsupported .npy data shape: {data.shape}")
-
-    if data.dtype == np.uint8:
-        data = data.astype(np.float16) / 255.0
-        data = data**2.2
 
     largest_dims = sorted(data.shape[1:])[-2:]
     if min(largest_dims) <= 4:
@@ -138,7 +139,8 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
         data = np.concatenate(
             [
                 data,
-                np.ones(
+                255
+                * np.ones(
                     padding_shape,
                     dtype=data.dtype,
                 ),
@@ -146,7 +148,7 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
             axis=channel_axis,
         )
 
-    return data
+    return data.astype(np.uint8)
 
 
 def auto_load_file(path: str | Path, default_fps: float = 30.0):

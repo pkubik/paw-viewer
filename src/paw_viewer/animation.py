@@ -73,12 +73,6 @@ class Animation:
 
         for frames, textures in zip(self.sources, self.per_source_textures):
             for image, texture in zip(frames, textures):
-                image = (
-                    (255 * np.sign(image) * np.abs(image) ** (1 / 2.2))
-                    .clip(0, 255)
-                    .astype(np.uint8)
-                )
-
                 gl.glBindTexture(texture.target, texture.id)
                 gl.glTexImage2D(
                     texture.target,  # target
