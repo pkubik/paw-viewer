@@ -76,7 +76,11 @@ class Animation:
                 if image.dtype != np.uint8:
                     # TODO: Gamma correction should be optional
                     # TODO: Gamma correction should be applied before clipboard copy as well
-                    image = (255 * image ** (1 / 2.2)).clip(0, 255).astype(np.uint8)
+                    image = (
+                        (255 * np.pow(np.abs(image), 1 / 2.2))
+                        .clip(0, 255)
+                        .astype(np.uint8)
+                    )
                     image = np.ascontiguousarray(image)
                 gl.glBindTexture(texture.target, texture.id)
                 gl.glTexImage2D(
