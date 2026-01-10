@@ -20,6 +20,7 @@ class Animation:
         self.names = list(sources.keys())
         self.fps = fps
         self.active_source = 0
+        self.gamma = 2.2
 
         T, H, W, _ = self.sources[self.active_source].shape
         if any(source.shape[:3] != (T, H, W) for source in self.sources):
@@ -65,6 +66,18 @@ class Animation:
             return
         self.frame_index = (self.frame_index + 1) % self.num_frames
 
+    def frame_as_uint8(self, t: int | None = None) -> np.ndarray:
+        if t is None:
+            t = self.frame_index
+        frame = self.frames[t]
+        if frame.dtype != np.uint8:
+            frame = (
+                (255 * np.pow(np.abs(frame), 1 / self.gamma))
+                .clip(0, 255)
+                .astype(np.uint8)
+            )
+        return frame
+
     def _update_textures(self):
         """Should be called only after setting sources (i.e. in init)"""
         from ctypes import POINTER, c_uint8
@@ -73,6 +86,15 @@ class Animation:
 
         for frames, textures in zip(self.sources, self.per_source_textures):
             for image, texture in zip(frames, textures):
+                if image.dtype != np.uint8:
+                    # TODO: Gamma correction should be optional
+                    # TODO: Gamma correction should be applied before clipboard copy as well
+                    image = (
+                        (255 * np.pow(np.abs(image), 1 / self.gamma))
+                        .clip(0, 255)
+                        .astype(np.uint8)
+                    )
+                    image = np.ascontiguousarray(image)
                 gl.glBindTexture(texture.target, texture.id)
                 gl.glTexImage2D(
                     texture.target,  # target

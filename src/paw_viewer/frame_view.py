@@ -177,9 +177,8 @@ class FrameView(EventDispatcher):
             return None
 
         texture = self.animation.active_texture
-        offset = Vec2(texture.width // 2, texture.height // 2)
-        c1 = self.crop_corners.c1 + offset
-        c2 = self.crop_corners.c2 + offset
+        c1 = self.crop_corners.c1
+        c2 = self.crop_corners.c2
 
         x1 = min(c1.x, c2.x)
         x2 = max(c1.x, c2.x)
@@ -206,20 +205,23 @@ class FrameView(EventDispatcher):
 
         if buttons & pyglet.window.mouse.RIGHT:
             texture = self.animation.active_texture
-            max_xy = Vec2(texture.width // 2, texture.height // 2)
-            min_xy = -max_xy
+            offset = Vec2(texture.width / 2, texture.height / 2)
+            size = Vec2(texture.width, texture.height)
 
             if self.crop_corners is None:
-                c1 = ~self.model @ Vec4(x, y, 0.0, 1.0)
+                offset_c1 = ~self.model @ Vec4(x, y, 0.0, 1.0)
+                c1 = Vec2(offset_c1.x, offset_c1.y) + offset
+
                 self.crop_corners = CropCorners()
-                # TODO: Make sure the rounding is pixel-perfect even for odd texture sizes
                 self.crop_corners.c1 = Vec2(round(c1.x), round(c1.y)).clamp(
-                    min_xy, max_xy
+                    Vec2(0, 0), size
                 )
 
-            c2 = ~self.model @ Vec4(x + dx, y + dy, 0.0, 1.0)
-            self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(min_xy, max_xy)
-
+            offset_c2 = ~self.model @ Vec4(x + dx, y + dy, 0.0, 1.0)
+            c2 = Vec2(offset_c2.x, offset_c2.y) + offset
+            self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(
+                Vec2(0, 0), size
+            )
     def on_mouse_press(self, x, y, buttons, modifiers):
         if buttons & pyglet.window.mouse.RIGHT:
             self.crop_corners = None
@@ -291,8 +293,15 @@ class FrameView(EventDispatcher):
         self.group.program["model"] = self.model
 
         crop = self.crop_corners or CropCorners()
-        x1 = crop.c1.x
-        y1 = crop.c1.y
-        x2 = crop.c2.x
-        y2 = crop.c2.y
+        texture = self.animation.active_texture
+        offset = Vec2(
+            texture.width / 2,
+            texture.height / 2,
+        )
+        c1 = crop.c1 - offset
+        c2 = crop.c2 - offset
+        x1 = c1.x
+        y1 = c1.y
+        x2 = c2.x
+        y2 = c2.y
         self.group.program["crop_corners"] = Vec4(x1, y1, x2, y2)
