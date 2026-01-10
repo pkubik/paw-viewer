@@ -143,10 +143,8 @@ class ViewerWindow(pyglet.window.Window):
             if symbol == pyglet.window.key.C:
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None and coords.crop_area() > 0:
-                    t = self.animation.frame_index
-                    image = self.animation.frames[
-                        t, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
-                    ]
+                    frame = self.animation.frame_as_uint8()
+                    image = frame[coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x]
                     io.copy_array_to_clipboard(image)
                 else:
                     print("Nothing to copy - no selection")
