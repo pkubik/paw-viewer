@@ -21,6 +21,7 @@ class Animation:
         self.fps = fps
         self.active_source = 0
         self.gamma = 2.2
+        self.exposure = 1.0
 
         T, H, W, _ = self.sources[self.active_source].shape
         if any(source.shape[:3] != (T, H, W) for source in self.sources):
@@ -72,7 +73,7 @@ class Animation:
         frame = self.frames[t]
         if frame.dtype != np.uint8:
             frame = (
-                (255 * np.pow(np.abs(frame), 1 / self.gamma))
+                (255 * np.pow(np.abs(frame * self.exposure), 1 / self.gamma))
                 .clip(0, 255)
                 .astype(np.uint8)
             )
