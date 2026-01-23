@@ -181,7 +181,6 @@ def show_video_arrays(
     outputs_root: str | Path | None = None,
 ):
     animation = Animation(
-        # "neg" just for reference now
         video_arrays,
         fps=fps,
     )
