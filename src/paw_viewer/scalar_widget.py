@@ -1,5 +1,6 @@
 import pyglet
 from pyglet.event import EventDispatcher
+import numpy as np
 
 
 class ColumnLayout:
@@ -28,10 +29,8 @@ class ColumnLayout:
         self.update_geometry()
 
     def update_geometry(self):
-        for element in self.elements:
-            element.update_geometry(
-                x=self.x, y=self.y + len(self.elements) * self.element_height
-            )
+        for i, element in enumerate(self.elements):
+            element.update_geometry(x=self.x, y=self.y + i * self.element_height)
 
 
 class ScalarWidget(EventDispatcher):
@@ -90,7 +89,7 @@ class ScalarWidget(EventDispatcher):
     def on_mouse_motion(self, x, y, dx, dy):
         if self.is_dragged:
             d = dx + dy
-            self.value += d * self.value_step
+            self.value += round(np.sign(d) * np.abs(d) ** 1.2) * self.value_step
             self.trigger_change()
             return True
 
