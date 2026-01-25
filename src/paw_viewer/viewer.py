@@ -71,6 +71,7 @@ class ViewerWindow(pyglet.window.Window):
             group=self.overlay_group,
         )
 
+        # Set up scalar widgets column
         padding = 4
         font_size = 16
         self.column = ColumnLayout(
@@ -78,6 +79,7 @@ class ViewerWindow(pyglet.window.Window):
             y=30,
             element_height=2 * padding + font_size,
         )
+
         self.gamma = ScalarWidget(
             2.2,
             0.01,
@@ -91,6 +93,20 @@ class ViewerWindow(pyglet.window.Window):
         self.column.add_widget(self.gamma)
         self.push_handlers(self.gamma)
 
+        self.exposure = ScalarWidget(
+            1.0,
+            0.01,
+            self,
+            self.batch,
+            group=self.overlay_group,
+            format_string="Exposure: {:.2f}",
+            padding=padding,
+            font_size=font_size,
+        )
+        self.column.add_widget(self.exposure)
+        self.push_handlers(self.exposure)
+
+        # Set up source switcher
         if len(self.animation.names) > 1:
             self.source_labels = [
                 pyglet.text.Label(
