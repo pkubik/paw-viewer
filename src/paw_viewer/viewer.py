@@ -7,6 +7,7 @@ import pyglet
 from paw_viewer import io
 from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
+from paw_viewer.scalar_widget import ColumnLayout, ScalarWidget
 from paw_viewer.slider import Slider
 
 
@@ -69,6 +70,26 @@ class ViewerWindow(pyglet.window.Window):
             batch=self.batch,
             group=self.overlay_group,
         )
+
+        padding = 4
+        font_size = 16
+        self.column = ColumnLayout(
+            x=30,
+            y=30,
+            element_height=2 * padding + font_size,
+        )
+        self.gamma = ScalarWidget(
+            2.2,
+            0.01,
+            self,
+            self.batch,
+            group=self.overlay_group,
+            format_string="Gamma: {:.2f}",
+            padding=padding,
+            font_size=font_size,
+        )
+        self.column.add_widget(self.gamma)
+        self.push_handlers(self.gamma)
 
         if len(self.animation.names) > 1:
             self.source_labels = [
