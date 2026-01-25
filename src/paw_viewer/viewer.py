@@ -72,26 +72,13 @@ class ViewerWindow(pyglet.window.Window):
         )
 
         # Set up scalar widgets column
-        padding = 4
+        self.scalar_widget_padding = padding = 8
         font_size = 16
         self.column = ColumnLayout(
-            x=30,
-            y=30,
+            x=8,
+            y=self.height - padding,
             element_height=2 * padding + font_size,
         )
-
-        self.gamma = ScalarWidget(
-            2.2,
-            0.01,
-            self,
-            self.batch,
-            group=self.overlay_group,
-            format_string="Gamma: {:.2f}",
-            padding=padding,
-            font_size=font_size,
-        )
-        self.column.add_widget(self.gamma)
-        self.push_handlers(self.gamma)
 
         self.exposure = ScalarWidget(
             1.0,
@@ -105,6 +92,19 @@ class ViewerWindow(pyglet.window.Window):
         )
         self.column.add_widget(self.exposure)
         self.push_handlers(self.exposure)
+
+        self.gamma = ScalarWidget(
+            2.2,
+            0.01,
+            self,
+            self.batch,
+            group=self.overlay_group,
+            format_string="Gamma: {:.2f}",
+            padding=padding,
+            font_size=font_size,
+        )
+        self.column.add_widget(self.gamma)
+        self.push_handlers(self.gamma)
 
         # Set up source switcher
         if len(self.animation.names) > 1:
@@ -150,6 +150,10 @@ class ViewerWindow(pyglet.window.Window):
         self.slider.length = self.width - 2 * self.slider_margin
         self.slider.update_geometry()
         self.update_source_labels()
+
+        self.column.y = self.height - self.scalar_widget_padding
+        self.column.update_geometry()
+
         return super().on_resize(width, height)
 
     def on_draw(self):
