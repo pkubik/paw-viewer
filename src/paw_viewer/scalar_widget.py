@@ -2,6 +2,8 @@ import pyglet
 from pyglet.event import EventDispatcher
 import numpy as np
 
+from paw_viewer.style import ACCENT_COLOR, FG_COLOR
+
 
 class ColumnLayout:
     """
@@ -97,6 +99,12 @@ class ScalarWidget(EventDispatcher):
         return False
 
     def on_mouse_motion(self, x, y, dx, dy):
+        if self.is_dragged or self.is_in_boundary(x, y):
+            self.label.color = ACCENT_COLOR
+
+        else:
+            self.label.color = FG_COLOR
+
         if self.is_dragged:
             d = dx + dy
             self.value += round(np.sign(d) * np.abs(d) ** 1.2) * self.value_step
