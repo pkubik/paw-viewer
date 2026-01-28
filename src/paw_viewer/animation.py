@@ -88,10 +88,8 @@ class Animation:
         for frames, textures in zip(self.sources, self.per_source_textures):
             for image, texture in zip(frames, textures):
                 if image.dtype != np.uint8:
-                    # TODO: Gamma correction should be optional
-                    # TODO: Gamma correction should be applied before clipboard copy as well
                     image = (
-                        (255 * np.pow(np.abs(image), 1 / self.gamma))
+                        (255 * np.pow(np.abs(image * self.exposure), 1 / self.gamma))
                         .clip(0, 255)
                         .astype(np.uint8)
                     )
