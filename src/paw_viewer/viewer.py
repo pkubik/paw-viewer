@@ -93,6 +93,12 @@ class ViewerWindow(pyglet.window.Window):
         self.column.add_widget(self.exposure)
         self.push_handlers(self.exposure)
 
+        @self.exposure.event
+        def on_change(value):
+            self.animation.exposure = value
+            # TODO: super slow!
+            # self.animation._update_textures()
+
         self.gamma = ScalarWidget(
             2.2,
             0.01,
@@ -105,6 +111,12 @@ class ViewerWindow(pyglet.window.Window):
         )
         self.column.add_widget(self.gamma)
         self.push_handlers(self.gamma)
+
+        @self.gamma.event
+        def on_change(value):
+            self.animation.gamma = value
+            # TODO: super slow!
+            # self.animation._update_textures()
 
         # Set up source switcher
         if len(self.animation.names) > 1:
