@@ -82,11 +82,12 @@ class ViewerWindow(pyglet.window.Window):
 
         self.exposure = ScalarWidget(
             self.animation.exposure,
-            0.01,
+            0.001,
             self,
             self.batch,
             group=self.overlay_group,
-            format_string="Exposure: {:.2f}",
+            min_value=0.0,
+            format_string="Exposure: {:.3f}",
             padding=padding,
             font_size=font_size,
         )
@@ -101,11 +102,12 @@ class ViewerWindow(pyglet.window.Window):
 
         self.gamma = ScalarWidget(
             self.animation.gamma,
-            0.01,
+            0.001,
             self,
             self.batch,
             group=self.overlay_group,
-            format_string="Gamma: {:.2f}",
+            min_value=0.0,
+            format_string="Gamma: {:.3f}",
             padding=padding,
             font_size=font_size,
         )

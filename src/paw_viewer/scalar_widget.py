@@ -57,6 +57,7 @@ class ScalarWidget(EventDispatcher):
         window: pyglet.window.BaseWindow,
         batch: pyglet.graphics.Batch,
         group: pyglet.graphics.Group = None,
+        min_value: float = -np.inf,
         padding: int = 4,
         font_size: int = 16,
         format_string: str = "{}",
@@ -66,6 +67,7 @@ class ScalarWidget(EventDispatcher):
         self.padding = padding
         self.window = window
         self.value_step = value_step
+        self.min_value = min_value
 
         self.label = pyglet.text.Label(
             self.format_string.format(self.value),
@@ -107,7 +109,8 @@ class ScalarWidget(EventDispatcher):
 
         if self.is_dragged:
             d = dx + dy
-            self.value += round(np.sign(d) * np.abs(d) ** 1.2) * self.value_step
+            self.value += round(np.sign(d) * np.abs(d) ** 2) * self.value_step
+            self.value = max(self.value, self.min_value)
             self.trigger_change()
             return True
 
