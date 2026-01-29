@@ -222,6 +222,7 @@ class FrameView(EventDispatcher):
             self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(
                 Vec2(0, 0), size
             )
+
     def on_mouse_press(self, x, y, buttons, modifiers):
         if buttons & pyglet.window.mouse.RIGHT:
             self.crop_corners = None
@@ -305,3 +306,5 @@ class FrameView(EventDispatcher):
         x2 = c2.x
         y2 = c2.y
         self.group.program["crop_corners"] = Vec4(x1, y1, x2, y2)
+        self.group.program["exposure"] = self.animation.exposure
+        self.group.program["gamma"] = self.animation.gamma

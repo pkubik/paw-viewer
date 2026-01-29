@@ -14,6 +14,7 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Vec2
 
 from paw_viewer import shaders
+from paw_viewer.style import ACCENT_COLOR
 
 _vertex_source = shaders.load_slider_vertex_shader()
 _fragment_source = shaders.load_slider_fragment_shader()
@@ -96,7 +97,7 @@ class Slider(EventDispatcher):
             f"{self.current_step + 1}/{self.total_steps}",
             x=self.x + self.length + self.stroke,
             y=self.y + 2 * self.stroke,
-            color=(51, 153, 80),
+            color=ACCENT_COLOR,
             weight="bold",
             font_size=2 * self.stroke,
             batch=self.batch,

@@ -7,6 +7,7 @@ import pyglet
 from paw_viewer import io
 from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
+from paw_viewer.scalar_widget import ColumnLayout, ScalarWidget
 from paw_viewer.slider import Slider
 
 
@@ -70,6 +71,52 @@ class ViewerWindow(pyglet.window.Window):
             group=self.overlay_group,
         )
 
+        # Set up scalar widgets column
+        self.scalar_widget_padding = padding = 8
+        font_size = 16
+        self.column = ColumnLayout(
+            x=8,
+            y=self.height - padding,
+            element_height=2 * padding + font_size,
+        )
+
+        self.exposure = ScalarWidget(
+            self.animation.exposure,
+            0.001,
+            self,
+            self.batch,
+            group=self.overlay_group,
+            min_value=0.0,
+            format_string="Exposure: {:.3f}",
+            padding=padding,
+            font_size=font_size,
+        )
+        self.column.add_widget(self.exposure)
+        self.push_handlers(self.exposure)
+
+        @self.exposure.event
+        def on_change(value):
+            self.animation.exposure = value
+
+        self.gamma = ScalarWidget(
+            self.animation.gamma,
+            0.001,
+            self,
+            self.batch,
+            group=self.overlay_group,
+            min_value=0.0,
+            format_string="Gamma: {:.3f}",
+            padding=padding,
+            font_size=font_size,
+        )
+        self.column.add_widget(self.gamma)
+        self.push_handlers(self.gamma)
+
+        @self.gamma.event
+        def on_change(value):
+            self.animation.gamma = value
+
+        # Set up source switcher
         if len(self.animation.names) > 1:
             self.source_labels = [
                 pyglet.text.Label(
@@ -113,6 +160,10 @@ class ViewerWindow(pyglet.window.Window):
         self.slider.length = self.width - 2 * self.slider_margin
         self.slider.update_geometry()
         self.update_source_labels()
+
+        self.column.y = self.height - self.scalar_widget_padding
+        self.column.update_geometry()
+
         return super().on_resize(width, height)
 
     def on_draw(self):
@@ -126,7 +177,7 @@ class ViewerWindow(pyglet.window.Window):
         if pyglet.window.key.MOD_CTRL & modifiers:
             if symbol == pyglet.window.key.X:
                 coords = self.frame_view.crop_image_coordinates()
-                if coords is not None:
+                if coords is not None and coords.crop_area() > 0:
                     coords_dict = {
                         "source": self.animation.active_source_name(),
                         "t": [
