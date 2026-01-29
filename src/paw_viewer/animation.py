@@ -40,12 +40,15 @@ class Animation:
         self.names = list(sources.keys())
         self.fps = fps
         self.active_source = 0
-        self.gamma = 2.2
+        self.gamma = 1.0
         self.exposure = 1.0
 
         T, H, W, _ = self.sources[self.active_source].shape
         if any(source.shape[:3] != (T, H, W) for source in self.sources):
             raise ValueError("all sources must have the same shape")
+
+        if self.sources[self.active_source].dtype != np.uint8:
+            self.gamma = 2.2
 
         active_frames = self.sources[self.active_source]
         self.num_frames = active_frames.shape[0]

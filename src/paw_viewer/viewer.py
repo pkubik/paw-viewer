@@ -81,7 +81,7 @@ class ViewerWindow(pyglet.window.Window):
         )
 
         self.exposure = ScalarWidget(
-            1.0,
+            self.animation.exposure,
             0.01,
             self,
             self.batch,
@@ -100,7 +100,7 @@ class ViewerWindow(pyglet.window.Window):
             # self.animation._update_textures()
 
         self.gamma = ScalarWidget(
-            2.2,
+            self.animation.gamma,
             0.01,
             self,
             self.batch,

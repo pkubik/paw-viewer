@@ -305,3 +305,5 @@ class FrameView(EventDispatcher):
         x2 = c2.x
         y2 = c2.y
         self.group.program["crop_corners"] = Vec4(x1, y1, x2, y2)
+        self.group.program["exposure"] = self.animation.exposure
+        self.group.program["gamma"] = self.animation.gamma
