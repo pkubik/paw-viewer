@@ -24,7 +24,9 @@ A simple pyglet image viewer - a base for hacking out custom ndarray visualizati
 ### Scalar widgets
 
 Some scalars, like `exposure` and `gamma` are controlled by Blender-like scalar widget.
-Click and drag the label up-right/left-down to increase/decrease the value.
+Click with left mouse button and drag the label up-right/left-down to increase/decrease the value.
+Click with right mouse button to reset the scalar to its initial value.
+
 
 ## Notes
 
