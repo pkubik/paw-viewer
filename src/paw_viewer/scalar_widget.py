@@ -62,6 +62,7 @@ class ScalarWidget(EventDispatcher):
         font_size: int = 16,
         format_string: str = "{}",
     ):
+        self.initial_value = initial_value
         self.value = initial_value
         self.format_string = format_string
         self.padding = padding
@@ -95,9 +96,14 @@ class ScalarWidget(EventDispatcher):
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if self.is_in_boundary(x, y):
-            self.is_dragged = True
-            self.window.set_exclusive_mouse(True)
-            return True
+            if buttons & pyglet.window.mouse.LEFT:
+                self.is_dragged = True
+                self.window.set_exclusive_mouse(True)
+                return True
+            elif buttons & pyglet.window.mouse.RIGHT:
+                self.value = self.initial_value
+                self.trigger_change()
+                return True
         return False
 
     def on_mouse_motion(self, x, y, dx, dy):
