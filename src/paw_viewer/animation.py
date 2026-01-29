@@ -1,6 +1,26 @@
 import numpy as np
 import pyglet
 from pyglet.gl import GL_NEAREST
+import ctypes
+
+
+DTYPE_TO_GL_FORMAT = {
+    np.dtype(np.uint8): pyglet.gl.GL_RGBA8,
+    np.dtype(np.float16): pyglet.gl.GL_RGBA16F,
+    np.dtype(np.float32): pyglet.gl.GL_RGBA32F,
+}
+
+DTYPE_TO_CTYPE = {
+    np.dtype(np.uint8): ctypes.POINTER(ctypes.c_uint8),
+    np.dtype(np.float16): ctypes.POINTER(ctypes.c_uint16),
+    np.dtype(np.float32): ctypes.POINTER(ctypes.c_float),
+}
+
+DTYPE_TO_GL_TYPE = {
+    np.dtype(np.uint8): pyglet.gl.GL_UNSIGNED_BYTE,
+    np.dtype(np.float16): pyglet.gl.GL_HALF_FLOAT,
+    np.dtype(np.float32): pyglet.gl.GL_FLOAT,
+}
 
 
 class Animation:
@@ -39,10 +59,11 @@ class Animation:
                     height=H,
                     min_filter=GL_NEAREST,
                     mag_filter=GL_NEAREST,
+                    internalformat=DTYPE_TO_GL_FORMAT[source[t].dtype],
                 )
-                for _ in range(T)
+                for t in range(T)
             ]
-            for _ in self.sources
+            for source in self.sources
         ]
         self._update_textures()
 
@@ -81,30 +102,21 @@ class Animation:
 
     def _update_textures(self):
         """Should be called only after setting sources (i.e. in init)"""
-        from ctypes import POINTER, c_uint8
-
         from pyglet import gl
 
         for frames, textures in zip(self.sources, self.per_source_textures):
             for image, texture in zip(frames, textures):
-                if image.dtype != np.uint8:
-                    image = (
-                        (255 * np.pow(np.abs(image * self.exposure), 1 / self.gamma))
-                        .clip(0, 255)
-                        .astype(np.uint8)
-                    )
-                    image = np.ascontiguousarray(image)
                 gl.glBindTexture(texture.target, texture.id)
                 gl.glTexImage2D(
                     texture.target,  # target
                     0,  # level
-                    gl.GL_RGBA8,  # internalformat
+                    DTYPE_TO_GL_FORMAT[image.dtype],  # internalformat
                     texture.width,  # width
                     texture.height,  # height
                     0,  # border
                     gl.GL_RGBA,  # format
-                    gl.GL_UNSIGNED_BYTE,  # type
-                    image.ctypes.data_as(POINTER(c_uint8)),  # pixels
+                    DTYPE_TO_GL_TYPE[image.dtype],  # type
+                    image.ctypes.data_as(DTYPE_TO_CTYPE[image.dtype]),  # pixels
                 )
 
     def start(self):
