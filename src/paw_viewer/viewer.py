@@ -177,7 +177,7 @@ class ViewerWindow(pyglet.window.Window):
         if pyglet.window.key.MOD_CTRL & modifiers:
             if symbol == pyglet.window.key.X:
                 coords = self.frame_view.crop_image_coordinates()
-                if coords is not None:
+                if coords is not None and coords.crop_area() > 0:
                     coords_dict = {
                         "source": self.animation.active_source_name(),
                         "t": [

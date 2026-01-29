@@ -22,7 +22,9 @@ void main()
     vec2 bottom_left = min(frag_crop_corners.xy, frag_crop_corners.zw);
     vec2 top_right = max(frag_crop_corners.xy, frag_crop_corners.zw);
     float eps = 0.000000001;
-    if (length(bottom_left - top_right) > eps)
+
+    vec2 size = abs(top_right - bottom_left);
+    if (min(size.x, size.y) > eps)
     {
         float dx1 = max(0., bottom_left.x - frag_position.x);
         float dy1 = max(0., bottom_left.y - frag_position.y);

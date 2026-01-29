@@ -222,6 +222,7 @@ class FrameView(EventDispatcher):
             self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(
                 Vec2(0, 0), size
             )
+
     def on_mouse_press(self, x, y, buttons, modifiers):
         if buttons & pyglet.window.mouse.RIGHT:
             self.crop_corners = None
