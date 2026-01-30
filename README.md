@@ -1,6 +1,18 @@
 # paw-viewer
 A simple pyglet image viewer - a base for hacking out custom ndarray visualizations.
 
+<img width="1060" height="499" alt="image" src="https://github.com/user-attachments/assets/74ed7c65-0ce7-4208-b6de-759d4b759dff" />
+
+**Features**:
+- Loading and displaying images and videos in popular formats
+- Zoom with nearest neighbor interpolation
+- Video playback with precise control
+- Easy switching between multiple sources, e.g. your algorithm outputs and reference images
+- Selecting regions for extracting cropped data to clipboard or a file
+   - This includes small JSON text with crop definition (for use in QA automation configs)
+- Controlling exposure and gamma
+- Easy Python API for passing `numpy` arrays
+
 ## Base Usage
 
 There is a CLI with some logic to automatically load and interpret some selected file formats,
