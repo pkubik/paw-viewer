@@ -52,9 +52,9 @@ class RenderGroup(Group):
             self,
             position=(
                 "f",
-                shaders.create_quad_from_texture(self.animation.active_texture),
+                shaders.create_quad_from_texture(self.animation.main_texture),
             ),
-            tex_coords=("f", self.animation.active_texture.tex_coords),
+            tex_coords=("f", self.animation.main_texture.tex_coords),
         )
 
     def set_state(self):
@@ -142,6 +142,23 @@ class CropCorners:
         height = abs(self.c1.y - self.c2.y)
         return width * height
 
+    def change_resolution(
+        self, from_size: Vec2, to_size: Vec2, round_pixels: bool = True
+    ):
+        """Assumes canonical coordinate system - origin at bottom-left, y increases upwards."""
+        scale_x = to_size.x / from_size.x
+        scale_y = to_size.y / from_size.y
+        new = CropCorners(self.c1, self.c2)
+
+        if round_pixels:
+            new.c1 = Vec2(round(new.c1.x * scale_x), round(new.c1.y * scale_y))
+            new.c2 = Vec2(round(new.c2.x * scale_x), round(new.c2.y * scale_y))
+        else:
+            new.c1 = Vec2(new.c1.x * scale_x, new.c1.y * scale_y)
+            new.c2 = Vec2(new.c2.x * scale_x, new.c2.y * scale_y)
+
+        return new
+
 
 class FrameView(EventDispatcher):
     """Handles the viewport for rendering frames."""
@@ -169,6 +186,8 @@ class FrameView(EventDispatcher):
         self.zoom_level = ZoomLevel()
         self.scroll_speed = 20  # in pixels
         self.crop_corners: CropCorners | None = None
+        # CropCorners are in model coordinates, which are aligned with the main texture
+        # and may be inconsistend with other textures if they have different sizes.
 
         self.register_event_type("on_source_change")
 
@@ -176,9 +195,16 @@ class FrameView(EventDispatcher):
         if self.crop_corners is None:
             return None
 
+        main_texture = self.animation.main_texture
         texture = self.animation.active_texture
-        c1 = self.crop_corners.c1
-        c2 = self.crop_corners.c2
+
+        active_crop_corners = self.crop_corners.change_resolution(
+            from_size=Vec2(main_texture.width, main_texture.height),
+            to_size=Vec2(texture.width, texture.height),
+            round_pixels=True,
+        )
+        c1 = active_crop_corners.c1
+        c2 = active_crop_corners.c2
 
         x1 = min(c1.x, c2.x)
         x2 = max(c1.x, c2.x)
@@ -204,7 +230,7 @@ class FrameView(EventDispatcher):
             self.translation += Vec3(dx, dy, 0)
 
         if buttons & pyglet.window.mouse.RIGHT:
-            texture = self.animation.active_texture
+            texture = self.animation.main_texture
             offset = Vec2(texture.width / 2, texture.height / 2)
             size = Vec2(texture.width, texture.height)
 
@@ -222,6 +248,15 @@ class FrameView(EventDispatcher):
             self.crop_corners.c2 = Vec2(round(c2.x), round(c2.y)).clamp(
                 Vec2(0, 0), size
             )
+
+            # Snap crop corners to active texture resolution
+            active_size = Vec2(
+                self.animation.active_texture.width,
+                self.animation.active_texture.height,
+            )
+            self.crop_corners = self.crop_corners.change_resolution(
+                from_size=size, to_size=active_size, round_pixels=True
+            ).change_resolution(from_size=active_size, to_size=size, round_pixels=False)
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         if buttons & pyglet.window.mouse.RIGHT:
@@ -294,7 +329,7 @@ class FrameView(EventDispatcher):
         self.group.program["model"] = self.model
 
         crop = self.crop_corners or CropCorners()
-        texture = self.animation.active_texture
+        texture = self.animation.main_texture
         offset = Vec2(
             texture.width / 2,
             texture.height / 2,

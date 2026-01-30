@@ -44,8 +44,6 @@ class Animation:
         self.exposure = 1.0
 
         T, H, W, _ = self.sources[self.active_source].shape
-        if any(source.shape[:3] != (T, H, W) for source in self.sources):
-            raise ValueError("all sources must have the same shape")
 
         if self.sources[self.active_source].dtype != np.uint8:
             self.gamma = 2.2
@@ -56,19 +54,36 @@ class Animation:
         self.running = False
 
         self.per_source_textures = [
-            [
-                pyglet.image.Texture.create(
-                    width=W,
-                    height=H,
-                    min_filter=GL_NEAREST,
-                    mag_filter=GL_NEAREST,
-                    internalformat=DTYPE_TO_GL_FORMAT[source[t].dtype],
-                )
-                for t in range(T)
-            ]
+            [self._create_texture(source[t]) for t in range(T)]
             for source in self.sources
         ]
-        self._update_textures()
+
+    def _create_texture(self, image: np.ndarray) -> pyglet.image.Texture:
+        H, W, C = image.shape
+        assert C == 4, "Only RGBA images are supported"
+
+        texture = pyglet.image.Texture.create(
+            width=W,
+            height=H,
+            min_filter=GL_NEAREST,
+            mag_filter=GL_NEAREST,
+            internalformat=DTYPE_TO_GL_FORMAT[image.dtype],
+        )
+        from pyglet import gl
+
+        gl.glBindTexture(texture.target, texture.id)
+        gl.glTexImage2D(
+            texture.target,  # target
+            0,  # level
+            DTYPE_TO_GL_FORMAT[image.dtype],  # internalformat
+            texture.width,  # width
+            texture.height,  # height
+            0,  # border
+            gl.GL_RGBA,  # format
+            DTYPE_TO_GL_TYPE[image.dtype],  # type
+            image.ctypes.data_as(DTYPE_TO_CTYPE[image.dtype]),  # pixels
+        )
+        return texture
 
     @property
     def frames(self):
@@ -77,6 +92,10 @@ class Animation:
     @property
     def active_textures(self):
         return self.per_source_textures[self.active_source]
+
+    @property
+    def main_texture(self) -> pyglet.image.Texture:
+        return self.per_source_textures[0][self.frame_index]
 
     @property
     def active_texture(self) -> pyglet.image.Texture:
@@ -102,25 +121,6 @@ class Animation:
                 .astype(np.uint8)
             )
         return frame
-
-    def _update_textures(self):
-        """Should be called only after setting sources (i.e. in init)"""
-        from pyglet import gl
-
-        for frames, textures in zip(self.sources, self.per_source_textures):
-            for image, texture in zip(frames, textures):
-                gl.glBindTexture(texture.target, texture.id)
-                gl.glTexImage2D(
-                    texture.target,  # target
-                    0,  # level
-                    DTYPE_TO_GL_FORMAT[image.dtype],  # internalformat
-                    texture.width,  # width
-                    texture.height,  # height
-                    0,  # border
-                    gl.GL_RGBA,  # format
-                    DTYPE_TO_GL_TYPE[image.dtype],  # type
-                    image.ctypes.data_as(DTYPE_TO_CTYPE[image.dtype]),  # pixels
-                )
 
     def start(self):
         pyglet.clock.schedule_interval(self.animation_step, 1 / self.fps)
