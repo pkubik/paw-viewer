@@ -135,6 +135,10 @@ Click with right mouse button to reset the scalar to its initial value.
   See `res/demo-multi-size.npz` for reference.
 - There is not way to select a time range for now,
   so we always save [current frame, current frame + 8] as videos.
+- Loading 8GB video arrays may be slow, so don't panic if the program hangs for several seconds.
+  I'd like to use some worker threads to load most of the frames in the background in the future.
+  I recommend using **CTRL+X** for quickly building a list of interesting crops and saving them
+  separately for faster access.
 - Viewer itself accept both `uint8` and `float` types, because
   unification would be too slow.
 - Numpy default type is `np.float64` (i.e. Python `float`).
