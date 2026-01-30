@@ -13,6 +13,16 @@ A simple pyglet image viewer - a base for hacking out custom ndarray visualizati
 - Controlling exposure and gamma
 - Easy Python API for passing `numpy` arrays
 
+### Video playback controls
+
+<img width="1131" height="183" alt="image" src="https://github.com/user-attachments/assets/33c2a249-8800-4c1a-808b-1af944d79d77" />
+
+### Multi-source files
+
+<img width="962" height="293" alt="image" src="https://github.com/user-attachments/assets/cc85df01-c96c-4777-a8c1-ec89e33a53af" />
+
+<img width="1188" height="354" alt="image" src="https://github.com/user-attachments/assets/157970c2-e14e-47ac-aff2-ddb20e72d373" />
+
 ## Base Usage
 
 There is a CLI with some logic to automatically load and interpret some selected file formats,
