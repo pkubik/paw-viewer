@@ -144,3 +144,14 @@ Click with right mouse button to reset the scalar to its initial value.
 - Numpy default type is `np.float64` (i.e. Python `float`).
   Not sure if there is a way to pass that directly to the shader,
   so you need to convert to `np.float32` first.
+
+### On Python
+
+So far I didn't hit any Python-specific limitations with this project.
+
+- The critical code is implemented within C extensions anyway
+- Python can totally handle the kinds of updates that I perform every frame, that is,
+  intersecting mouse cursor with widget bounding boxes, handling uniforms, etc.
+- The OpenGL bindings from `pyglet` allow to get deep enough.
+  Translating certain C API concepts to Python may be tricky,
+  but, surprisingly, that's one of few cases where I could actually rely on Copilot.
