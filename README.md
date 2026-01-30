@@ -23,6 +23,21 @@ A simple pyglet image viewer - a base for hacking out custom ndarray visualizati
 
 <img width="1188" height="354" alt="image" src="https://github.com/user-attachments/assets/157970c2-e14e-47ac-aff2-ddb20e72d373" />
 
+## Core Concepts
+
+This should be familiar to anyone working with computer vision applications.
+
+1. A single image is represented as a multi-dimensional array of shape `[H, W, C]`.
+   Once loaded, the viewer provides features like panning, zooming and cropping.
+2. A video is a sequence of images with shape `[T, H, W C]`.
+   This adds the time dimension that can be controlled with the slider on the bottom of the window,
+   or fine-grained keyboard bindings (see below).
+3. Multi-source image/video adds top-level grouping into a dictionary of arrays.
+   A list of sources appears on the left and you can switch between them with keybindings.
+   We assume that all sources contain matching frames from the sources that we would like to compare.
+   For example: you may load an output of two algorithms, zoom into an a problematic region
+   and repeatedly switch the sources judge whether there was an improvement.
+
 ## Base Usage
 
 There is a CLI with some logic to automatically load and interpret some selected file formats,
@@ -54,7 +69,9 @@ pip install git+https://github.com/pkubik/paw-viewer.git
 paw res/bridge480p.mp4
 ```
 
-## API
+## Python API
+
+Please read the "Core Concepts" before proceeding.
 
 Use `show_video_array` to run the UI on an arbitrary 4D numpy array:
 
@@ -74,6 +91,15 @@ paw.show_video_arrays(
     }
 )
 ```
+
+The only nuance for the API is that static images are actually represented as 1-frame videos,
+so their shape needs to be artificially expanded on the first dimension to match `[1, H, W, C]`.
+
+**Btw. this is Python**
+
+The code is not as simple as I originally imagined it to be, but it's still Python.
+You may download and hack it to better match your needs.
+That's especially useful if you'd like to format your crop definitions in a specific custom format.
 
 ## Controls
 
