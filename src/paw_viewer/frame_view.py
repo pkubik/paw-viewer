@@ -23,6 +23,30 @@ from paw_viewer.animation import Animation
 from paw_viewer.zoom_level import ZoomLevel
 
 
+KEY_TO_NUMBER = {
+    pyglet.window.key._0: 0,
+    pyglet.window.key._1: 1,
+    pyglet.window.key._2: 2,
+    pyglet.window.key._3: 3,
+    pyglet.window.key._4: 4,
+    pyglet.window.key._5: 5,
+    pyglet.window.key._6: 6,
+    pyglet.window.key._7: 7,
+    pyglet.window.key._8: 8,
+    pyglet.window.key._9: 9,
+    pyglet.window.key.NUM_0: 0,
+    pyglet.window.key.NUM_1: 1,
+    pyglet.window.key.NUM_2: 2,
+    pyglet.window.key.NUM_3: 3,
+    pyglet.window.key.NUM_4: 4,
+    pyglet.window.key.NUM_5: 5,
+    pyglet.window.key.NUM_6: 6,
+    pyglet.window.key.NUM_7: 7,
+    pyglet.window.key.NUM_8: 8,
+    pyglet.window.key.NUM_9: 9,
+}
+
+
 class RenderGroup(Group):
     def __init__(self, animation: Animation, order=0, parent=None):
         """Create a RenderGroup.
@@ -293,6 +317,14 @@ class FrameView(EventDispatcher):
                 self.dispatch_event("on_source_change", self.animation.active_source)
             if symbol == pyglet.window.key.Z:
                 self.animation.previous_source()
+                self.dispatch_event("on_source_change", self.animation.active_source)
+
+            number = KEY_TO_NUMBER.get(symbol, None)
+            if number is not None:
+                number = min(number, len(self.animation.sources))
+                number = max(number, 1)
+                index = number - 1  # convert to zero-based index
+                self.animation.active_source = index
                 self.dispatch_event("on_source_change", self.animation.active_source)
 
         if symbol == pyglet.window.key.SPACE:

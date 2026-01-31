@@ -110,6 +110,7 @@ That's especially useful if you'd like to format your crop definitions in a spec
 | Right-click + drag            | Select crop region |
 | Right-click                   | Cancel crop region |
 | **Z/X**                       | Prev/next source   |
+| **1/2/3.. 9** (1-9 numbers)   | Go to n-th source  |
 | **SPACE**                     | Start/stop playback |
 | **CTRL+A**<br>**CTRL+D**      | Go to prev/next frame |
 | **CTRL+S**                    | Go to start frame  |
