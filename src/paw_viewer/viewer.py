@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -235,11 +236,15 @@ def show_video_arrays(
         video_arrays,
         fps=fps,
     )
+    logging.info("Starting viewer window")
+    logging.info(f"Outputs root directory: {outputs_root}")
+    logging.debug("Creating viewer window object")
     viewer_window = ViewerWindow(animation=animation, outputs_root=outputs_root)
 
+    logging.debug("Starting pyglet app")
     pyglet.app.run()
     pyglet.app.exit()
-
+    logging.info("Closed viewer window")
 
 def show_video_array(
     video_array, fps: float = 30, outputs_root: str | Path | None = None

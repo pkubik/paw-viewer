@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 import pyglet
 from pyglet.gl import GL_NEAREST
@@ -36,6 +37,7 @@ class Animation:
     def __init__(self, sources: dict[str, np.ndarray], fps: float = 30):
         if len(sources) == 0:
             raise ValueError("sources must not be empty")
+        logging.info(f"Initializing Animation with sources: {list(sources.keys())}")
         self.sources = list(sources.values())
         self.names = list(sources.keys())
         self.fps = fps
@@ -53,12 +55,16 @@ class Animation:
         self.frame_index = 0
         self.running = False
 
+        logging.info("Creating textures for animation frames")
         self.per_source_textures = [
             [self._create_texture(source[t]) for t in range(T)]
             for source in self.sources
         ]
 
     def _create_texture(self, image: np.ndarray) -> pyglet.image.Texture:
+        logging.debug(
+            f"Creating texture for image of shape {image.shape} and dtype {image.dtype}"
+        )
         H, W, C = image.shape
         assert C == 4, "Only RGBA images are supported"
 

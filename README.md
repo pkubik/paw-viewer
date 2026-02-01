@@ -153,6 +153,9 @@ So far I didn't hit any Python-specific limitations with this project.
 - The critical code is implemented within C extensions anyway
 - Python can totally handle the kinds of updates that I perform every frame, that is,
   intersecting mouse cursor with widget bounding boxes, handling uniforms, etc.
+- The playback is stable for ~30fps playback, which is my typical use case,
+  but it gets worse for larger values >60fps. I'm still not sure whether the cause is
+  the Python even loop or suboptimal use of OpenGL (e.g. I bind a new texture every frame).
 - The OpenGL bindings from `pyglet` allow to get deep enough.
   Translating certain C API concepts to Python may be tricky,
   but, surprisingly, that's one of few cases where I could actually rely on Copilot.

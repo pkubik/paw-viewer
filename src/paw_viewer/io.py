@@ -84,6 +84,7 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
         - pad with 0s for 2-channel images
         - add alpha channel if there are less than 4 channels
     """
+    logging.debug(f"Auto-adjusting array with original shape {data.shape}")
     if data.ndim == 2:
         # Assume grayscale image, convert to 1HW1
         data = data[np.newaxis, ..., np.newaxis]
@@ -148,18 +149,23 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
 
 
 def auto_load_file(path: str | Path, default_fps: float = 30.0):
+    logging.info(f"Auto-loading content from path: {path}")
     path = Path(path)
     fps = default_fps
     if path.suffix.lower() in (".mp4", ".avi", ".mov", ".mkv"):
+        logging.debug("Detected video file format")
         image, fps = load_video(path)
         images = {"": image}
     elif path.suffix.lower() == ".exr":
+        logging.debug("Detected EXR file format")
         images = load_exr(path)
     elif path.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".tiff"):
+        logging.debug("Detected image file format")
         image = load_image(path)
         image = image[np.newaxis, ...]  # Add batch dimension for consistency
         images = {"": image}
     elif path.suffix.lower() in (".npy", ".npz"):
+        logging.debug("Detected NumPy file format")
         image_or_dict = np.load(path)
         if isinstance(image_or_dict, np.ndarray):
             images = {"": image_or_dict}
@@ -168,6 +174,7 @@ def auto_load_file(path: str | Path, default_fps: float = 30.0):
     else:
         raise ValueError("Unsupported file format")
 
+    logging.info("Auto-adjusting loaded arrays")
     images = {name: auto_adjust_array(image) for name, image in images.items()}
     return images, fps
 
@@ -181,6 +188,7 @@ def copy_array_to_clipboard(image: np.ndarray):
         return
 
     if np.issubdtype(image.dtype, np.floating):
+        logging.debug("Converting float image to uint8 for clipboard")
         image *= 255
     ck.copy_image(
         image.astype(np.uint8).tobytes(),
