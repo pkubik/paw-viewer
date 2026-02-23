@@ -8,6 +8,7 @@ import pyglet
 from paw_viewer import io
 from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
+from paw_viewer.help_overlay import HelpOverlay
 from paw_viewer.scalar_widget import ColumnLayout, ScalarWidget
 from paw_viewer.slider import Slider
 
@@ -136,6 +137,15 @@ class ViewerWindow(pyglet.window.Window):
         else:
             self.source_labels = []
 
+        # Set up help overlay
+        self.help_overlay = HelpOverlay(
+            self.width,
+            self.height,
+            self.batch,
+            self.overlay_group,
+        )
+        self.push_handlers(self.help_overlay)
+
         self.invalid = False
 
     def update_source_labels(self) -> None:
@@ -164,6 +174,8 @@ class ViewerWindow(pyglet.window.Window):
 
         self.column.y = self.height - self.scalar_widget_padding
         self.column.update_geometry()
+
+        self.help_overlay.on_window_resize(width, height)
 
         return super().on_resize(width, height)
 
@@ -223,7 +235,26 @@ class ViewerWindow(pyglet.window.Window):
                     print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:
                 self.close()
+
+        # Help overlay controls
+        if symbol == pyglet.window.key.F1:
+            self.help_overlay.toggle()
+            return pyglet.event.EVENT_HANDLED
+        if (
+            symbol == pyglet.window.key.SLASH
+            and pyglet.window.key.MOD_SHIFT & modifiers == 0
+        ):
+            # Question mark is Shift+/ on US keyboard, but catch both cases
+            self.help_overlay.toggle()
+            return pyglet.event.EVENT_HANDLED
+        if symbol == pyglet.window.key.QUESTION:
+            self.help_overlay.toggle()
+            return pyglet.event.EVENT_HANDLED
+
         if symbol == pyglet.window.key.ESCAPE:
+            if self.help_overlay.visible:
+                self.help_overlay.hide()
+                return pyglet.event.EVENT_HANDLED
             return pyglet.event.EVENT_HANDLED
 
 
