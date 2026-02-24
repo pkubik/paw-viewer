@@ -138,11 +138,12 @@ class ViewerWindow(pyglet.window.Window):
             self.source_labels = []
 
         # Set up help overlay
+        self.help_overlay_group = pyglet.graphics.Group(order=9)
         self.help_overlay = HelpOverlay(
             self.width,
             self.height,
             self.batch,
-            self.overlay_group,
+            self.help_overlay_group,
         )
         self.push_handlers(self.help_overlay)
 
@@ -235,27 +236,6 @@ class ViewerWindow(pyglet.window.Window):
                     print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:
                 self.close()
-
-        # Help overlay controls
-        if symbol == pyglet.window.key.F1:
-            self.help_overlay.toggle()
-            return pyglet.event.EVENT_HANDLED
-        if (
-            symbol == pyglet.window.key.SLASH
-            and pyglet.window.key.MOD_SHIFT & modifiers == 0
-        ):
-            # Question mark is Shift+/ on US keyboard, but catch both cases
-            self.help_overlay.toggle()
-            return pyglet.event.EVENT_HANDLED
-        if symbol == pyglet.window.key.QUESTION:
-            self.help_overlay.toggle()
-            return pyglet.event.EVENT_HANDLED
-
-        if symbol == pyglet.window.key.ESCAPE:
-            if self.help_overlay.visible:
-                self.help_overlay.hide()
-                return pyglet.event.EVENT_HANDLED
-            return pyglet.event.EVENT_HANDLED
 
 
 def show_video_arrays(

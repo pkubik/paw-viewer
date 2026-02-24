@@ -6,7 +6,7 @@ from pyglet.event import EventDispatcher
 BASE_TEXT_COLOR = "#fefefe"
 HEADER_TEXT_COLOR = "#118d26"
 KEY_TEXT_COLOR = "#65b661"
-FONT_SIZE = 4
+FONT_SIZE = 5
 
 HELP_KEY_ENTRY_HTML_TEMPLATE = (
     f'<font size="{FONT_SIZE}" color="{KEY_TEXT_COLOR}" face="monospace">'
@@ -30,6 +30,14 @@ def format_section(title: str, entries: list[tuple[str, str]]) -> str:
 
 HELP_HTML = (
     f"<h1><font color='{HEADER_TEXT_COLOR}' face='monospace'>KEYBOARD SHORTCUTS</font></h1><BR>"
+    + format_section(
+        "Help",
+        [
+            ("F1 / ?", "Show this help overlay"),
+            ("Mouse scroll", "Scroll help overlay while visible"),
+            ("ESC", "Close help overlay"),
+        ],
+    )
     + format_section(
         "Navigation",
         [
@@ -67,9 +75,7 @@ HELP_HTML = (
     + format_section(
         "Other",
         [
-            ("F1 / ?", "Show this help overlay"),
             ("CTRL+Q", "Quit"),
-            ("ESC", "Close help overlay"),
         ],
     )
 )
@@ -91,7 +97,7 @@ class HelpOverlay(EventDispatcher):
         self.batch = batch
         self.group = group
         self.visible = False
-        self.margin = 0.05
+        self.margin = 0.04
         self.background = None
         self.layout = None
         self._create_overlay()
@@ -102,12 +108,14 @@ class HelpOverlay(EventDispatcher):
         try:
             if self.background:
                 self.background.delete()
-            self.background = pyglet.shapes.Rectangle(
+            self.background = pyglet.shapes.BorderedRectangle(
                 x=self.margin * self.width,
                 y=self.margin * self.height,
                 width=int(self.width * (1 - self.margin * 2)),
                 height=int(self.height * (1 - self.margin * 2)),
-                color=(20, 26, 24, 220),
+                border=5,
+                color=(20, 26, 24, 240),
+                border_color=(100, 200, 100, 240),
                 batch=self.batch,
                 group=self.group,
             )
@@ -147,3 +155,26 @@ class HelpOverlay(EventDispatcher):
         self.width = width
         self.height = height
         self._create_overlay()
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        if self.layout and self.layout.visible:
+            self.layout.view_y += 20 * scroll_y
+            return pyglet.event.EVENT_HANDLED
+
+    def on_key_press(self, symbol, modifiers):
+        if self.layout is None:
+            return pyglet.event.EVENT_UNHANDLED
+
+        if self.layout.visible:
+            if symbol in (
+                pyglet.window.key.ESCAPE,
+                pyglet.window.key.F1,
+                pyglet.window.key.SLASH,
+            ):
+                self.hide()
+                return pyglet.event.EVENT_HANDLED
+        else:
+            if symbol in (pyglet.window.key.F1, pyglet.window.key.SLASH):
+                self.show()
+                return pyglet.event.EVENT_HANDLED
+        return pyglet.event.EVENT_UNHANDLED
