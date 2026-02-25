@@ -43,17 +43,17 @@ HELP_HTML = (
     + format_section(
         "Navigation",
         [
-            ("Left-click + drag / WASD", "Pan the image"),
+            ("Left-click+drag / WASD", "Pan the image"),
             ("SPACE", "Start/stop playback"),
             ("CTRL+A / CTRL+D", "Go to prev/next frame"),
             ("CTRL+S / CTRL+E", "Go to start/end frame"),
+            ("Left-click+drag on slider", "Select frame"),
         ],
     )
     + format_section(
         "Zoom",
         [
             ("Mouse scroll / R/F", "Zoom in/out"),
-            ("Double-Click", "Fit to window"),
         ],
     )
     + format_section(
@@ -61,13 +61,12 @@ HELP_HTML = (
         [
             ("Z / X", "Prev/next source"),
             ("1-9", "Go to n-th source"),
-            ("CTRL+Z / CTRL+X", "Prev/next source"),
         ],
     )
     + format_section(
         "Selection & Export",
         [
-            ("Right-click + drag", "Select crop region"),
+            ("Right-click+drag", "Select crop region"),
             ("Right-click", "Cancel crop region"),
             ("CTRL+X", "Copy region coordinates to clipboard"),
             ("CTRL+C", "Copy cropped image to clipboard"),
