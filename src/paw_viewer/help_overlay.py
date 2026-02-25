@@ -3,6 +3,8 @@
 import pyglet
 from pyglet.event import EventDispatcher
 
+from paw_viewer.style import FG_COLOR
+
 BASE_TEXT_COLOR = "#fefefe"
 HEADER_TEXT_COLOR = "#118d26"
 KEY_TEXT_COLOR = "#65b661"
@@ -100,55 +102,77 @@ class HelpOverlay(EventDispatcher):
         self.margin = 0.04
         self.background = None
         self.layout = None
+        self.label = None
+        self.visible = False
         self._create_overlay()
-        self.hide()
 
     def _create_overlay(self):
         """Create the help overlay label."""
-        try:
-            if self.background:
-                self.background.delete()
-            self.background = pyglet.shapes.BorderedRectangle(
-                x=self.margin * self.width,
-                y=self.margin * self.height,
-                width=int(self.width * (1 - self.margin * 2)),
-                height=int(self.height * (1 - self.margin * 2)),
-                border=5,
-                color=(20, 26, 24, 240),
-                border_color=(100, 200, 100, 240),
-                batch=self.batch,
-                group=self.group,
-            )
-            if self.layout:
-                self.layout.delete()
-            self.layout = pyglet.text.layout.ScrollableTextLayout(
-                pyglet.text.decode_html(HELP_HTML),
-                x=2 * self.margin * self.width,
-                y=2 * self.margin * self.height,
-                batch=self.batch,
-                group=self.group,
-                multiline=True,
-                width=int(self.width * (1 - self.margin * 4)),
-                height=int(self.height * (1 - self.margin * 4)),
-            )
-        except Exception as e:
-            print(f"Error creating help overlay: {e}")
-            self.label = None
+        if self.label:
+            self.label.delete()
+        self.label = pyglet.text.Label(
+            "F1 / ? for help",
+            font_name="Lucida Console",
+            font_size=14,
+            color=FG_COLOR,
+            x=self.width - 8,
+            y=self.height - 8,
+            anchor_x="right",
+            anchor_y="top",
+            batch=self.batch,
+            group=self.group,
+        )
+        if self.background:
+            self.background.delete()
+        self.background = pyglet.shapes.BorderedRectangle(
+            x=self.margin * self.width,
+            y=self.margin * self.height,
+            width=int(self.width * (1 - self.margin * 2)),
+            height=int(self.height * (1 - self.margin * 2)),
+            border=5,
+            color=(20, 26, 24, 240),
+            border_color=(100, 200, 100, 240),
+            batch=self.batch,
+            group=self.group,
+        )
+        if self.layout:
+            self.layout.delete()
+        self.layout = pyglet.text.layout.ScrollableTextLayout(
+            pyglet.text.decode_html(HELP_HTML),
+            x=2 * self.margin * self.width,
+            y=2 * self.margin * self.height,
+            batch=self.batch,
+            group=self.group,
+            multiline=True,
+            width=int(self.width * (1 - self.margin * 4)),
+            height=int(self.height * (1 - self.margin * 4)),
+        )
+
+        if self.visible:
+            self.show()
+        else:
+            self.hide()
 
     def show(self):
         """Show the help overlay."""
+        self.visible = True
+        self.label.visible = False
         self.layout.visible = True
         self.background.visible = True
 
     def hide(self):
         """Hide the help overlay."""
+        self.visible = False
+        self.label.visible = True
         self.layout.visible = False
         self.background.visible = False
 
     def toggle(self):
         """Toggle overlay visibility."""
-        self.layout.visible = not self.layout.visible
-        self.background.visible = not self.background.visible
+        if self.visible:
+            self.hide()
+        else:
+            self.show()
 
     def on_window_resize(self, width: int, height: int):
         """Handle window resize."""
