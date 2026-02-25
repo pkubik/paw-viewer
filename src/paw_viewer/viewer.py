@@ -8,6 +8,7 @@ import pyglet
 from paw_viewer import io
 from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
+from paw_viewer.help_overlay import HelpOverlay
 from paw_viewer.scalar_widget import ColumnLayout, ScalarWidget
 from paw_viewer.slider import Slider
 
@@ -136,6 +137,16 @@ class ViewerWindow(pyglet.window.Window):
         else:
             self.source_labels = []
 
+        # Set up help overlay
+        self.help_overlay_group = pyglet.graphics.Group(order=9)
+        self.help_overlay = HelpOverlay(
+            self.width,
+            self.height,
+            self.batch,
+            self.help_overlay_group,
+        )
+        self.push_handlers(self.help_overlay)
+
         self.invalid = False
 
     def update_source_labels(self) -> None:
@@ -164,6 +175,8 @@ class ViewerWindow(pyglet.window.Window):
 
         self.column.y = self.height - self.scalar_widget_padding
         self.column.update_geometry()
+
+        self.help_overlay.on_window_resize(width, height)
 
         return super().on_resize(width, height)
 
@@ -223,8 +236,6 @@ class ViewerWindow(pyglet.window.Window):
                     print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:
                 self.close()
-        if symbol == pyglet.window.key.ESCAPE:
-            return pyglet.event.EVENT_HANDLED
 
 
 def show_video_arrays(
