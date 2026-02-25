@@ -122,6 +122,7 @@ class HelpOverlay(EventDispatcher):
             batch=self.batch,
             group=self.group,
         )
+
         if self.background:
             self.background.delete()
         self.background = pyglet.shapes.BorderedRectangle(
@@ -135,7 +136,10 @@ class HelpOverlay(EventDispatcher):
             batch=self.batch,
             group=self.group,
         )
+
+        scroll_offset = 0
         if self.layout:
+            scroll_offset = self.layout.view_y  # to preserve scroll on window resize
             self.layout.delete()
         self.layout = pyglet.text.layout.ScrollableTextLayout(
             pyglet.text.decode_html(HELP_HTML),
@@ -147,6 +151,7 @@ class HelpOverlay(EventDispatcher):
             width=int(self.width * (1 - self.margin * 4)),
             height=int(self.height * (1 - self.margin * 4)),
         )
+        self.layout.view_y = scroll_offset
 
         if self.visible:
             self.show()
