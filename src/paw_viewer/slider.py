@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.gl import (
@@ -68,6 +69,12 @@ def clip(x, min_x, max_x):
     return max(min(x, max_x), min_x)
 
 
+@dataclass
+class TimeRange:
+    start: int
+    end: int
+
+
 class Slider(EventDispatcher):
     """Fancy slider widget"""
 
@@ -104,6 +111,9 @@ class Slider(EventDispatcher):
             anchor_y="center",
         )
 
+        self.time_selection: TimeRange | None = None
+        self.time_selection = TimeRange(10, 20)
+
         self.register_event_type("on_change")
 
     def update_geometry(self):
@@ -135,16 +145,20 @@ class Slider(EventDispatcher):
 
     def on_mouse_press(self, x, y, buttons, modifiers):
         is_in_box = self.is_in_boundary(x, y)
-        if (is_in_box or self.is_dragged) and buttons & pyglet.window.mouse.LEFT:
-            self.is_dragged = True
-            start_x = self.x + self.stroke
-            end_x = self.x + self.length - self.stroke
-            ratio = (x - start_x) / (end_x - start_x)
-            self.current_step = clip(
-                int(ratio * self.total_steps), 0, self.total_steps - 1
-            )
-            self.trigger_step_change()
-            return True
+        if is_in_box or self.is_dragged:
+            if buttons & pyglet.window.mouse.LEFT:
+                self.is_dragged = True
+                start_x = self.x + self.stroke
+                end_x = self.x + self.length - self.stroke
+                ratio = (x - start_x) / (end_x - start_x)
+                self.current_step = clip(
+                    int(ratio * self.total_steps), 0, self.total_steps - 1
+                )
+                self.trigger_step_change()
+                return True
+            if buttons & pyglet.window.mouse.RIGHT:
+                self.is_dragged = True
+                pass
 
     def trigger_step_change(self):
         self.update_step_label()
@@ -173,3 +187,15 @@ class Slider(EventDispatcher):
             )
             slider.y = float(self.y + self.stroke)
             slider.steps = self.total_steps
+            if self.time_selection is None:
+                slider.selection_start_x = float(self.x)
+                slider.selection_end_x = float(self.x + box_width)
+            else:
+                slider.selection_start_x = float(
+                    start_x
+                    + inner_slider_length * self.time_selection.start / total_steps
+                )
+                slider.selection_end_x = float(
+                    start_x
+                    + inner_slider_length * self.time_selection.end / total_steps
+                )
