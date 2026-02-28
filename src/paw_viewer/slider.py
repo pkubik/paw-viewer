@@ -116,7 +116,6 @@ class Slider(EventDispatcher):
         )
 
         self.time_selection: TimeRange | None = None
-        self.time_selection = TimeRange(10, 20)
 
         self.register_event_type("on_change")
 
