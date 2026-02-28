@@ -10,7 +10,7 @@ from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
 from paw_viewer.help_overlay import HelpOverlay
 from paw_viewer.scalar_widget import ColumnLayout, ScalarWidget
-from paw_viewer.slider import Slider
+from paw_viewer.slider import Slider, TimeRange
 
 
 class ViewerWindow(pyglet.window.Window):
@@ -192,11 +192,12 @@ class ViewerWindow(pyglet.window.Window):
             if symbol == pyglet.window.key.X:
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None and coords.crop_area() > 0:
+                    t = self.get_time_selection()
                     coords_dict = {
                         "source": self.animation.active_source_name(),
                         "t": [
-                            self.animation.frame_index,
-                            self.animation.frame_index + 1,
+                            t.start,
+                            t.end,
                         ],
                         "x": [coords.c1.x, coords.c2.x],
                         "y": [coords.c1.y, coords.c2.y],
@@ -216,16 +217,16 @@ class ViewerWindow(pyglet.window.Window):
             if symbol == pyglet.window.key.N:
                 coords = self.frame_view.crop_image_coordinates()
                 if coords is not None and coords.crop_area() > 0:
-                    t = self.animation.frame_index
-                    # TODO: Allow selecting the end frame on the slider
-                    t_end = min(t + 16, len(self.animation.frames))
+                    t = self.get_time_selection()
                     data = self.animation.frames[
-                        t:t_end, coords.c1.y : coords.c2.y, coords.c1.x : coords.c2.x
+                        t.start : t.end,
+                        coords.c1.y : coords.c2.y,
+                        coords.c1.x : coords.c2.x,
                     ]
                     source_name = self.animation.active_source_name()
                     output_path = (
                         self.outputs_root
-                        / f"crop_{source_name}_{t}-{t_end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy"
+                        / f"crop_{source_name}_{t.start}-{t.end}_{coords.c1.x}-{coords.c2.x}_{coords.c1.y}-{coords.c2.y}.npy"
                     )
                     np.save(
                         output_path,
@@ -236,6 +237,11 @@ class ViewerWindow(pyglet.window.Window):
                     print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:
                 self.close()
+
+    def get_time_selection(self):
+        if self.slider.time_selection is None or self.slider.time_selection.is_empty():
+            return TimeRange(self.animation.frame_index, self.animation.frame_index + 1)
+        return self.slider.time_selection
 
 
 def show_video_arrays(
