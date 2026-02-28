@@ -74,6 +74,9 @@ class TimeRange:
     start: int
     end: int
 
+    def is_empty(self):
+        return self.start >= self.end
+
 
 class Slider(EventDispatcher):
     """Fancy slider widget"""
@@ -95,6 +98,7 @@ class Slider(EventDispatcher):
         self.current_step = 0
         self.total_steps = steps
         self.is_dragged = False
+        self.time_selection_anchor = None
 
         self.group = RenderGroup(parent=parent_group)
         self.vertex_list = self.group.create_vertex_list(self.batch)
@@ -129,9 +133,20 @@ class Slider(EventDispatcher):
 
     def on_mouse_release(self, x, y, buttons, modifiers):
         self.is_dragged = False
+        if buttons & pyglet.window.mouse.RIGHT:
+            self.time_selection_anchor = None
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        return self.on_mouse_press(x + dx, y + dy, buttons, modifiers)
+        if buttons & pyglet.window.mouse.LEFT:
+            # We just change the frame - same as when clicking
+            return self.on_mouse_press(x + dx, y + dy, buttons, modifiers)
+        elif buttons & pyglet.window.mouse.RIGHT:
+            if self.time_selection_anchor is not None or self.is_in_boundary(
+                x + dx, y + dy
+            ):
+                self.update_time_range(self.compute_step_from_position(x + dx))
+                return True
+            return False
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.step_label.visible = self.is_in_boundary(x + dx, y + dy)
@@ -143,22 +158,39 @@ class Slider(EventDispatcher):
         is_y_in_boundary = self.y <= y <= self.y + box_height
         return is_x_in_boundary and is_y_in_boundary
 
+    def compute_step_from_position(self, x):
+        start_x = self.x + self.stroke
+        end_x = self.x + self.length - self.stroke
+        ratio = (x - start_x) / (end_x - start_x)
+        return clip(int(ratio * self.total_steps), 0, self.total_steps - 1)
+
     def on_mouse_press(self, x, y, buttons, modifiers):
         is_in_box = self.is_in_boundary(x, y)
         if is_in_box or self.is_dragged:
             if buttons & pyglet.window.mouse.LEFT:
                 self.is_dragged = True
-                start_x = self.x + self.stroke
-                end_x = self.x + self.length - self.stroke
-                ratio = (x - start_x) / (end_x - start_x)
-                self.current_step = clip(
-                    int(ratio * self.total_steps), 0, self.total_steps - 1
-                )
+                self.current_step = self.compute_step_from_position(x)
                 self.trigger_step_change()
                 return True
             if buttons & pyglet.window.mouse.RIGHT:
-                self.is_dragged = True
-                pass
+                self.time_selection = None
+                return True
+
+    def update_time_range(self, current_frame: int):
+        if self.time_selection is None:
+            self.time_selection = TimeRange(current_frame, current_frame)
+        elif self.time_selection_anchor is None:
+            self.time_selection_anchor = current_frame
+        else:
+            # extend selection in either direction
+            if current_frame < self.time_selection_anchor:
+                self.time_selection = TimeRange(
+                    current_frame, self.time_selection_anchor + 1
+                )
+            else:
+                self.time_selection = TimeRange(
+                    self.time_selection_anchor, current_frame + 1
+                )
 
     def trigger_step_change(self):
         self.update_step_label()
@@ -187,7 +219,7 @@ class Slider(EventDispatcher):
             )
             slider.y = float(self.y + self.stroke)
             slider.steps = self.total_steps
-            if self.time_selection is None:
+            if self.time_selection is None or self.time_selection.is_empty():
                 slider.selection_start_x = float(self.x)
                 slider.selection_end_x = float(self.x + box_width)
             else:
