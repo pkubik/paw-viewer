@@ -68,6 +68,7 @@ HELP_HTML = (
         [
             ("Right-click+drag", "Select crop region"),
             ("Right-click", "Cancel crop region"),
+            ("Right-click+drag on slider", "Select time range"),
             ("CTRL+X", "Copy region coordinates to clipboard"),
             ("CTRL+C", "Copy cropped image to clipboard"),
             ("CTRL+N", "Save cropped region as .npy"),
