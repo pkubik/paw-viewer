@@ -115,11 +115,14 @@ That's especially useful if you'd like to format your crop definitions in a spec
 | **CTRL+A**<br>**CTRL+D**      | Go to prev/next frame |
 | **CTRL+S**                    | Go to start frame  |
 | **CTRL+E**                    | Go to end frame    |
+| **B**                         | Toggle forward/backward playback |
+| **SHIFT+B**                   | Toggle back-and-forth playback |
 | **CTRL+Z**<br>**CTRL+X**      | Go to prev/next source |
 | **CTRL+X**                    | Copy cropped region coordinates to clipboard as JSON |
 | **CTRL+C**                    | Copy cropped image region to clipboard |
 | **CTRL+N**                    | Save croppped region as numpy array (.npy) |
 | Click/drag on the slider      | Select frame       |
+| Right-click on the slider     | Select time range  |
 | **CTRL+Q**                    | Quit               |
 
 ### Scalar widgets
