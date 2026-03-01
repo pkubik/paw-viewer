@@ -48,6 +48,8 @@ HELP_HTML = (
             ("CTRL+A / CTRL+D", "Go to prev/next frame"),
             ("CTRL+S / CTRL+E", "Go to start/end frame"),
             ("Left-click+drag on slider", "Select frame"),
+            ("B", "Toggle forward/backward playback"),
+            ("Shift+B", "Toggle back-and-forth playback"),
         ],
     )
     + format_section(
