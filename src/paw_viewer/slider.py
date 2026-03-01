@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.gl import (
@@ -15,6 +14,7 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.math import Vec2
 
 from paw_viewer import shaders
+from paw_viewer.selections import TimeRange
 from paw_viewer.style import ACCENT_COLOR
 
 _vertex_source = shaders.load_slider_vertex_shader()
@@ -67,15 +67,6 @@ class RenderGroup(Group):
 
 def clip(x, min_x, max_x):
     return max(min(x, max_x), min_x)
-
-
-@dataclass
-class TimeRange:
-    start: int
-    end: int
-
-    def is_empty(self):
-        return self.start >= self.end
 
 
 class Slider(EventDispatcher):
@@ -173,6 +164,7 @@ class Slider(EventDispatcher):
                 return True
             if buttons & pyglet.window.mouse.RIGHT:
                 self.time_selection = None
+                self.dispatch_event("on_change", self.current_step, self.time_selection)
                 return True
 
     def update_time_range(self, current_frame: int):
@@ -190,10 +182,11 @@ class Slider(EventDispatcher):
                 self.time_selection = TimeRange(
                     self.time_selection_anchor, current_frame + 1
                 )
+        self.dispatch_event("on_change", self.current_step, self.time_selection)
 
     def trigger_step_change(self):
         self.update_step_label()
-        self.dispatch_event("on_change", self.current_step)
+        self.dispatch_event("on_change", self.current_step, self.time_selection)
 
     def on_draw(self):
         box_width = self.length

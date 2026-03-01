@@ -10,7 +10,8 @@ from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
 from paw_viewer.help_overlay import HelpOverlay
 from paw_viewer.scalar_widget import ColumnLayout, ScalarWidget
-from paw_viewer.slider import Slider, TimeRange
+from paw_viewer.selections import TimeRange
+from paw_viewer.slider import Slider
 
 
 class ViewerWindow(pyglet.window.Window):
@@ -60,8 +61,9 @@ class ViewerWindow(pyglet.window.Window):
         self.push_handlers(self.slider)
 
         @self.slider.event
-        def on_change(value):
+        def on_change(value, time_range):
             self.animation.frame_index = value
+            self.animation.set_time_range(time_range)
 
         self.label = pyglet.text.Label(
             "Zoom: 100%",

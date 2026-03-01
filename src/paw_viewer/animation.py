@@ -3,6 +3,7 @@ import numpy as np
 import pyglet
 from pyglet.gl import GL_NEAREST
 import ctypes
+from paw_viewer.selections import TimeRange
 
 
 DTYPE_TO_GL_FORMAT = {
@@ -53,6 +54,7 @@ class Animation:
         active_frames = self.sources[self.active_source]
         self.num_frames = active_frames.shape[0]
         self.frame_index = 0
+        self.time_range = TimeRange(0, self.num_frames)
         self.running = False
 
         logging.info("Creating textures for animation frames")
@@ -60,6 +62,12 @@ class Animation:
             [self._create_texture(source[t]) for t in range(T)]
             for source in self.sources
         ]
+
+    def set_time_range(self, time_range: TimeRange | None = None):
+        if time_range is not None and not time_range.is_empty():
+            self.time_range = time_range
+        else:
+            self.time_range = TimeRange(0, self.num_frames)
 
     def _create_texture(self, image: np.ndarray) -> pyglet.image.Texture:
         logging.debug(
@@ -114,7 +122,9 @@ class Animation:
         if not self.running:
             # just in case - this should not be called when not running
             return
-        self.frame_index = (self.frame_index + 1) % self.num_frames
+        self.frame_index += 1
+        if self.frame_index >= self.time_range.end:
+            self.frame_index = self.time_range.start
 
     def frame_as_uint8(self, t: int | None = None) -> np.ndarray:
         if t is None:

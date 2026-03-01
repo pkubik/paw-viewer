@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 import pyglet
 from pyglet.event import EventDispatcher
 from pyglet.gl import (
@@ -20,6 +18,7 @@ from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from paw_viewer import shaders
 from paw_viewer.animation import Animation
+from paw_viewer.selections import CropCorners
 from paw_viewer.zoom_level import ZoomLevel
 
 
@@ -154,34 +153,6 @@ class BackgroundRenderGroup(Group):
             and self.program == other.program
             and self.parent == other.parent
         )
-
-
-@dataclass
-class CropCorners:
-    c1: Vec2 = Vec2()
-    c2: Vec2 = Vec2()
-
-    def crop_area(self):
-        width = abs(self.c1.x - self.c2.x)
-        height = abs(self.c1.y - self.c2.y)
-        return width * height
-
-    def change_resolution(
-        self, from_size: Vec2, to_size: Vec2, round_pixels: bool = True
-    ):
-        """Assumes canonical coordinate system - origin at bottom-left, y increases upwards."""
-        scale_x = to_size.x / from_size.x
-        scale_y = to_size.y / from_size.y
-        new = CropCorners(self.c1, self.c2)
-
-        if round_pixels:
-            new.c1 = Vec2(round(new.c1.x * scale_x), round(new.c1.y * scale_y))
-            new.c2 = Vec2(round(new.c2.x * scale_x), round(new.c2.y * scale_y))
-        else:
-            new.c1 = Vec2(new.c1.x * scale_x, new.c1.y * scale_y)
-            new.c2 = Vec2(new.c2.x * scale_x, new.c2.y * scale_y)
-
-        return new
 
 
 class FrameView(EventDispatcher):
