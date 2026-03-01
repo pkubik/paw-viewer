@@ -240,6 +240,18 @@ class ViewerWindow(pyglet.window.Window):
             if symbol == pyglet.window.key.Q:
                 self.close()
 
+        if symbol == pyglet.window.key.B:
+            if modifiers & pyglet.window.key.MOD_SHIFT:
+                self.animation.back_and_forth = not self.animation.back_and_forth
+                logging.info(
+                    f"Toggling back-and-forth playback (to {self.animation.back_and_forth})"
+                )
+            else:
+                self.animation.backward = not self.animation.backward
+                logging.info(
+                    f"Toggling backward playback (to {self.animation.backward})"
+                )
+
     def get_time_selection(self):
         if self.slider.time_selection is None or self.slider.time_selection.is_empty():
             return TimeRange(self.animation.frame_index, self.animation.frame_index + 1)

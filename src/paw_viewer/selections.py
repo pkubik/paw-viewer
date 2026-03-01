@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from pyglet.math import Vec2
 
 
+def clip(x, min_x, max_x):
+    return max(min(x, max_x), min_x)
+
+
 @dataclass
 class CropCorners:
     c1: Vec2 = Vec2()

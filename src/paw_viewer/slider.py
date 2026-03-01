@@ -16,6 +16,7 @@ from pyglet.math import Vec2
 from paw_viewer import shaders
 from paw_viewer.selections import TimeRange
 from paw_viewer.style import ACCENT_COLOR
+from paw_viewer.selections import clip
 
 _vertex_source = shaders.load_slider_vertex_shader()
 _fragment_source = shaders.load_slider_fragment_shader()
@@ -63,10 +64,6 @@ class RenderGroup(Group):
             and self.program == other.program
             and self.parent == other.parent
         )
-
-
-def clip(x, min_x, max_x):
-    return max(min(x, max_x), min_x)
 
 
 class Slider(EventDispatcher):
