@@ -11,6 +11,8 @@ uniform Slider
     float start_x;
     float end_x;
     float knob_x;
+    float selection_start_x;
+    float selection_end_x;
     float y;
     int steps;
 } slider;
@@ -67,4 +69,9 @@ void main()
     float splitter_distance = rel_splitter_distance * step_width;
     float splitter_mask = float(splitter_distance < 1.0);
     final_color = mix(final_color, vec4(0.2, 0.6, 0.3, 1), min(inner_mask, splitter_mask));
+
+    // Dim unselected area
+    if (gl_FragCoord.x < slider.selection_start_x || gl_FragCoord.x > slider.selection_end_x) {
+        final_color *= 0.7;
+    }
 }
