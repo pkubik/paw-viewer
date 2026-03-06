@@ -76,6 +76,61 @@ def load_exr(path: str | Path) -> dict:
     return images
 
 
+def parse_frame_number(filename: str) -> int | None:
+    """Extract the longest sequence of digits from the filename"""
+    import re
+
+    matches = re.findall(r"\d+", filename)
+    if not matches:
+        return None
+    return int(max(matches, key=len))
+
+
+def load_directory(dir_path: str | Path) -> dict:
+    """
+    Load frames from a directory.
+    The numbers in the filenames will be sorted in natural order,
+    so that "frame2.png" comes before "frame10.png".
+    We accept an arbitrary text prefix and suffix, as long as there is a number in the filename.
+    """
+    dir_path = Path(dir_path)
+    paths = [
+        path
+        for path in dir_path.iterdir()
+        if path.is_file()
+        and path.suffix.lower() in (".png", ".jpg", ".jpeg", ".bmp", ".tiff", ".exr")
+    ]
+    if len(paths) == 0:
+        logging.warning(f"No image files found in directory {dir_path}.")
+        return {}
+
+    paths_by_numbers = {
+        frame_number: path
+        for path in paths
+        if (frame_number := parse_frame_number(path.stem)) is not None
+    }
+    frame_numbers = sorted(paths_by_numbers)
+    if len(frame_numbers) == 0:
+        logging.warning(
+            f"No files with frame numbers found in directory {dir_path}. Loading in arbitrary order."
+        )
+    else:
+        frame_max_diff = max(frame_numbers) - min(frame_numbers)
+        if frame_max_diff > len(frame_numbers):
+            logging.warning(
+                f"There are gaps between frame numbers in directory {dir_path}. Check if the files are named correctly."
+            )
+        paths = [paths_by_numbers[n] for n in frame_numbers]
+
+    images = np.stack(
+        [
+            load_exr(path) if path.suffix.lower() == ".exr" else load_image(path)
+            for path in paths
+        ]
+    )
+    return {"": images}
+
+
 def auto_adjust_array(data: np.ndarray) -> np.ndarray:
     """
     Automatically:
@@ -152,7 +207,10 @@ def auto_load_file(path: str | Path, default_fps: float = 30.0):
     logging.info(f"Auto-loading content from path: {path}")
     path = Path(path)
     fps = default_fps
-    if path.suffix.lower() in (".mp4", ".avi", ".mov", ".mkv"):
+    if path.is_dir():
+        logging.debug("Detected directory path")
+        images = load_directory(path)
+    elif path.suffix.lower() in (".mp4", ".avi", ".mov", ".mkv"):
         logging.debug("Detected video file format")
         image, fps = load_video(path)
         images = {"": image}
