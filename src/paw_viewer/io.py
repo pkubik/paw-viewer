@@ -124,7 +124,7 @@ def load_directory(dir_path: str | Path) -> dict:
 
     images = np.stack(
         [
-            load_exr(path) if path.suffix.lower() == ".exr" else load_image(path)
+            next(iter(load_exr(path).values())) if path.suffix.lower() == ".exr" else load_image(path)
             for path in paths
         ]
     )
@@ -253,3 +253,4 @@ def copy_array_to_clipboard(image: np.ndarray):
         width=image.shape[1],
         height=image.shape[0],
     )
+
