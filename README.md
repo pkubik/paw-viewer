@@ -69,6 +69,18 @@ pip install git+https://github.com/pkubik/paw-viewer.git
 paw res/bridge480p.mp4
 ```
 
+### Windows SendTo Integration
+
+On Windows, after installing the package, you can set up a "Send to" context menu shortcut:
+
+```
+paw-setup-sendto
+```
+
+This creates a shortcut in your Windows SendTo folder, allowing you to right-click on any image or video file and select "Send to > Paw Viewer" to open it directly in the viewer.
+
+Note: This requires the `pywin32` package, which is automatically installed on Windows systems.
+
 ## Python API
 
 Please read the "Core Concepts" before proceeding.

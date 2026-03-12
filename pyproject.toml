@@ -11,6 +11,7 @@ dependencies = [
     "opencv-python>=4.11.0.86",
     "openexr>=3.4.4",
     "copykitten>=2.0.0",
+    "pywin32>=308; sys_platform == 'win32'",
 ]
 
 [dependency-groups]
@@ -34,3 +35,4 @@ build-backend = "uv_build"
 
 [project.scripts]
 paw = "paw_viewer.__main__:main"
+paw-setup-sendto = "paw_viewer.setup_sendto:main"
