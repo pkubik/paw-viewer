@@ -1,6 +1,6 @@
 [project]
 name = "paw-viewer"
-version = "0.2.0"
+version = "0.2.1"
 description = "A simple ndarray image/video viewer"
 readme = "README.md"
 authors = [{ name = "Pawel Kubik", email = "p.kubik.pl@gmail.com" }]
