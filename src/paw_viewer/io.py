@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import logging
 
@@ -203,6 +204,22 @@ def auto_adjust_array(data: np.ndarray) -> np.ndarray:
     return data
 
 
+def load_memmap_npy(path: str | Path) -> np.ndarray:
+    """This is a custom format for spoofing wrapper"""
+    meta_path = list(Path(path).parent.glob("*.json"))[0]
+    with open(meta_path, "r") as f:
+        metadata = json.load(f)
+
+    shape = metadata["shape"]
+    dtype = np.float16 if "16" in metadata["type"] else np.float32
+
+    mem = np.memmap(str(path), dtype=dtype, mode="c", shape=tuple(shape))
+    # Convert from NCHW to NHWC
+    mem = np.ascontiguousarray(mem.transpose(0, 2, 3, 1))
+
+    return mem
+
+
 def auto_load_file(path: str | Path, default_fps: float = 30.0):
     logging.info(f"Auto-loading content from path: {path}")
     path = Path(path)
@@ -224,11 +241,16 @@ def auto_load_file(path: str | Path, default_fps: float = 30.0):
         images = {"": image}
     elif path.suffix.lower() in (".npy", ".npz"):
         logging.debug("Detected NumPy file format")
-        image_or_dict = np.load(path)
-        if isinstance(image_or_dict, np.ndarray):
-            images = {"": image_or_dict}
-        else:
-            images = image_or_dict
+        try:
+            image_or_dict = np.load(path)
+            if isinstance(image_or_dict, np.ndarray):
+                images = {"": image_or_dict}
+            else:
+                images = image_or_dict
+        except Exception:
+            # let's just blindly try to interpret that as memmap
+            logging.warning("Failed to load .npy file with numpy. Attempting to load as custom memmap.")
+            images = {"": load_memmap_npy(path)}
     else:
         raise ValueError("Unsupported file format")
 
