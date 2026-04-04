@@ -290,13 +290,20 @@ class FrameView(EventDispatcher):
                 self.animation.previous_source()
                 self.dispatch_event("on_source_change", self.animation.active_source)
 
-            number = KEY_TO_NUMBER.get(symbol, None)
-            if number is not None:
-                number = min(number, len(self.animation.sources))
-                number = max(number, 1)
-                index = number - 1  # convert to zero-based index
-                self.animation.active_source = index
-                self.dispatch_event("on_source_change", self.animation.active_source)
+        number = KEY_TO_NUMBER.get(symbol, None)
+        if number is not None:
+            if number == 0:
+                number = 10  # interpret 0 as 10 for easier access to first 10 sources
+            if pyglet.window.key.MOD_SHIFT & modifiers:
+                # Shift + number goes to 10-19, Ctrl + Shift + number goes to 20-29
+                number += 10
+                if pyglet.window.key.MOD_CTRL & modifiers:
+                    number += 10
+            number = min(number, len(self.animation.sources))
+            number = max(number, 1)
+            index = number - 1  # convert to zero-based index
+            self.animation.active_source = index
+            self.dispatch_event("on_source_change", self.animation.active_source)
 
         if symbol == pyglet.window.key.SPACE:
             self.animation.toggle()

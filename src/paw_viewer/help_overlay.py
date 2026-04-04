@@ -62,7 +62,9 @@ HELP_HTML = (
         "Sources",
         [
             ("Z / X", "Prev/next source"),
-            ("1-9", "Go to n-th source"),
+            ("1, 2..", "Go to n-th source (0 picks 10th)"),
+            ("SHIFT + 1, 2..", "Go to (n+10)-th source"),
+            ("CTRL+SHIFT + 1, 2..", "Go to (n+20)-th source"),
         ],
     )
     + format_section(
