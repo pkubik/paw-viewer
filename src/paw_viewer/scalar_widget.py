@@ -43,7 +43,7 @@ class ScalarWidget(EventDispatcher):
         self.is_dragged = False
         self.register_event_type("on_change")
 
-    def update_geometry(self, x, y):
+    def update_geometry(self, x, y, **kwargs):
         self.label.x = x + self.padding
         self.label.y = y + self.padding
 

@@ -186,6 +186,9 @@ class Slider(EventDispatcher):
         self.dispatch_event("on_change", self.current_step, self.time_selection)
 
     def on_draw(self):
+        if self.total_steps <= 1:
+            self.step_label.visible = False
+
         box_width = self.length
         box_height = 2 * self.stroke
         inner_slider_length = self.length - 2 * self.stroke

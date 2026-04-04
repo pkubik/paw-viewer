@@ -51,6 +51,17 @@ class ViewerWindow(pyglet.window.Window):
         def on_source_change(source):
             self.update_source_labels()
 
+        from paw_viewer.vignette import SideVignette
+
+        self.side_vignette_margin = 0.2
+        self.side_vignette = SideVignette(
+            width=self.side_vignette_margin * self.width,
+            height=self.height,
+            batch=self.batch,
+            parent_group=self.overlay_group,
+        )
+        self.push_handlers(self.side_vignette)
+
         self.slider_margin = 200
         self.slider = Slider(
             x=self.slider_margin,
@@ -175,6 +186,10 @@ class ViewerWindow(pyglet.window.Window):
             return super().on_resize(width, height)
         self.slider.length = self.width - 2 * self.slider_margin
         self.slider.update_geometry()
+        self.side_vignette.update_geometry(
+            width=self.side_vignette_margin * self.width,
+            height=self.height,
+        )
         self.update_source_labels()
 
         self.column.y = self.height - self.scalar_widget_padding
@@ -186,6 +201,7 @@ class ViewerWindow(pyglet.window.Window):
 
     def on_draw(self):
         self.frame_view.handle_keys(self.key_state)
+        self.side_vignette.handle_keys(self.key_state)
         self.slider.update_step(self.animation.frame_index)
         self.label.text = f"Zoom: {int(self.frame_view.zoom_level.scale() * 100)}%"
         self.clear()
