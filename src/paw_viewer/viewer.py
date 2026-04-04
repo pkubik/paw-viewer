@@ -32,6 +32,7 @@ class ViewerWindow(pyglet.window.Window):
 
         self.overlay_group = pyglet.graphics.Group(order=8)
         self.batch = pyglet.graphics.Batch()
+        self.view_batch = pyglet.graphics.Batch()
         pyglet.gl.glClearColor(0.05, 0.08, 0.06, 1)
 
         self.animation = animation
@@ -42,7 +43,7 @@ class ViewerWindow(pyglet.window.Window):
             self.width,
             self.height,
             self.animation,
-            batch=self.batch,
+            batch=self.view_batch,
         )
         self.push_handlers(self.frame_view)
 
@@ -188,6 +189,7 @@ class ViewerWindow(pyglet.window.Window):
         self.slider.update_step(self.animation.frame_index)
         self.label.text = f"Zoom: {int(self.frame_view.zoom_level.scale() * 100)}%"
         self.clear()
+        self.view_batch.draw()
         self.batch.draw()
 
     def on_key_press(self, symbol, modifiers):
