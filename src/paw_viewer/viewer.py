@@ -9,7 +9,8 @@ from paw_viewer import io
 from paw_viewer.animation import Animation
 from paw_viewer.frame_view import FrameView
 from paw_viewer.help_overlay import HelpOverlay
-from paw_viewer.scalar_widget import ColumnLayout, ScalarWidget
+from paw_viewer.scalar_widget import ScalarWidget
+from paw_viewer.column import ColumnLayout
 from paw_viewer.selections import TimeRange
 from paw_viewer.slider import Slider
 
