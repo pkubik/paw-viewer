@@ -18,7 +18,7 @@ from pyglet.math import Mat4, Vec2, Vec3, Vec4
 
 from paw_viewer import shaders
 from paw_viewer.animation import Animation
-from paw_viewer.selections import CropCorners
+from paw_viewer.selections import CropCorners, change_coords_resolution
 from paw_viewer.zoom_level import ZoomLevel
 
 
@@ -185,6 +185,7 @@ class FrameView(EventDispatcher):
         # and may be inconsistend with other textures if they have different sizes.
 
         self.register_event_type("on_source_change")
+        self.register_event_type("on_pixel_hover")
 
     def crop_image_coordinates(self, invert_y=True):
         if self.crop_corners is None:
@@ -259,6 +260,26 @@ class FrameView(EventDispatcher):
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_translation = Vec3(x, y, 0)
+
+        # TODO: this duplicates crop selection logic - to refactor
+        texture = self.animation.main_texture
+        size = Vec2(texture.width, texture.height)
+        offset = Vec2(texture.width / 2, texture.height / 2)
+        c = ~self.model @ Vec4(x, y, 0.0, 1.0)
+        c = Vec2(c.x, c.y) + offset
+        if 0 <= c.x < size.x and 0 <= c.y < size.y:
+            active_size = Vec2(
+                self.animation.active_texture.width,
+                self.animation.active_texture.height,
+            )
+            c = change_coords_resolution(
+                coords=c,
+                from_size=size,
+                to_size=active_size,
+                round_pixels=False,
+            )
+            c = Vec2(round(c.x - 0.5), round(c.y - 0.5)).clamp(Vec2(0, 0), active_size)
+            self.dispatch_event("on_pixel_hover", c.x, active_size.y - 1 - c.y)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if scroll_y > 0:

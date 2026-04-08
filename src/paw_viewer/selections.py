@@ -6,6 +6,21 @@ def clip(x, min_x, max_x):
     return max(min(x, max_x), min_x)
 
 
+def change_coords_resolution(
+    coords: Vec2, from_size: Vec2, to_size: Vec2, round_pixels: bool = True
+):
+    scale_x = to_size.x / from_size.x
+    scale_y = to_size.y / from_size.y
+
+    new_x = coords.x * scale_x
+    new_y = coords.y * scale_y
+    if round_pixels:
+        new_x = round(new_x)
+        new_y = round(new_y)
+
+    return Vec2(new_x, new_y)
+
+
 @dataclass
 class CropCorners:
     c1: Vec2 = Vec2()
@@ -20,18 +35,11 @@ class CropCorners:
         self, from_size: Vec2, to_size: Vec2, round_pixels: bool = True
     ):
         """Assumes canonical coordinate system - origin at bottom-left, y increases upwards."""
-        scale_x = to_size.x / from_size.x
-        scale_y = to_size.y / from_size.y
-        new = CropCorners(self.c1, self.c2)
 
-        if round_pixels:
-            new.c1 = Vec2(round(new.c1.x * scale_x), round(new.c1.y * scale_y))
-            new.c2 = Vec2(round(new.c2.x * scale_x), round(new.c2.y * scale_y))
-        else:
-            new.c1 = Vec2(new.c1.x * scale_x, new.c1.y * scale_y)
-            new.c2 = Vec2(new.c2.x * scale_x, new.c2.y * scale_y)
-
-        return new
+        return CropCorners(
+            change_coords_resolution(self.c1, from_size, to_size, round_pixels),
+            change_coords_resolution(self.c2, from_size, to_size, round_pixels),
+        )
 
 
 @dataclass

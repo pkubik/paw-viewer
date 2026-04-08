@@ -89,8 +89,8 @@ class ViewerWindow(pyglet.window.Window):
         )
 
         # Set up scalar widgets column
-        self.scalar_widget_padding = padding = 8
-        font_size = 16
+        self.scalar_widget_padding = padding = 4
+        font_size = 14
         self.column = ColumnLayout(
             x=8,
             y=self.height - padding,
@@ -132,6 +132,54 @@ class ViewerWindow(pyglet.window.Window):
         @self.gamma.event
         def on_change(value):
             self.animation.gamma = value
+
+        self.channel_scalars = {}
+        for c in "RGBA":
+            channel_scalar = ScalarWidget.static_scalar(
+                value=float("nan"),
+                window=self,
+                batch=self.batch,
+                group=self.overlay_group,
+                padding=padding,
+                font_size=font_size,
+                format_string=f"{c}: {{:g}}",
+            )
+            self.column.add_widget(channel_scalar)
+            self.channel_scalars[c] = channel_scalar
+
+        self.x_scalar = ScalarWidget.static_scalar(
+            value=0,
+            window=self,
+            batch=self.batch,
+            group=self.overlay_group,
+            padding=padding,
+            font_size=font_size,
+            format_string="X: {:d}",
+        )
+        self.column.add_widget(self.x_scalar)
+
+        self.y_scalar = ScalarWidget.static_scalar(
+            value=0,
+            window=self,
+            batch=self.batch,
+            group=self.overlay_group,
+            padding=padding,
+            font_size=font_size,
+            format_string="Y: {:d}",
+        )
+        self.column.add_widget(self.y_scalar)
+
+        @self.frame_view.event
+        def on_pixel_hover(x, y):
+            self.x_scalar.value = x
+            self.x_scalar.update_label()
+            self.y_scalar.value = y
+            self.y_scalar.update_label()
+
+            values = self.animation.frames[self.animation.frame_index][y, x]
+            for scalar, value in zip(self.channel_scalars.values(), values):
+                scalar.value = value
+                scalar.update_label()
 
         # Set up source switcher
         if len(self.animation.names) > 1:
