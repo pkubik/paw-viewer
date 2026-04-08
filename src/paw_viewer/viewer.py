@@ -307,6 +307,24 @@ class ViewerWindow(pyglet.window.Window):
             if symbol == pyglet.window.key.Q:
                 self.close()
 
+        if pyglet.window.key.MOD_SHIFT & modifiers:
+            if symbol == pyglet.window.key.X:
+                yx = self.frame_view.hovered_pixel
+
+                xy_str = f"{int(yx.x)}, {int(yx.y)}"
+                print(f"XY: {xy_str}")
+                self.set_clipboard_text(xy_str)
+
+            if symbol == pyglet.window.key.C:
+                yx = self.frame_view.hovered_pixel
+                y = int(yx.y)
+                x = int(yx.x)
+
+                values = self.animation.frames[self.animation.frame_index][y, x]
+                values_str = ", ".join(f"{v:g}" for v in values)
+                print(f"RGBA: {values_str}")
+                self.set_clipboard_text(values_str)
+
         if symbol == pyglet.window.key.B:
             if modifiers & pyglet.window.key.MOD_SHIFT:
                 self.animation.back_and_forth = not self.animation.back_and_forth

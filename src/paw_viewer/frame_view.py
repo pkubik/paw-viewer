@@ -184,6 +184,8 @@ class FrameView(EventDispatcher):
         # CropCorners are in model coordinates, which are aligned with the main texture
         # and may be inconsistend with other textures if they have different sizes.
 
+        self.hovered_pixel = Vec2(0, 0)
+
         self.register_event_type("on_source_change")
         self.register_event_type("on_pixel_hover")
 
@@ -261,25 +263,35 @@ class FrameView(EventDispatcher):
     def on_mouse_motion(self, x, y, dx, dy):
         self.cursor_translation = Vec3(x, y, 0)
 
+        self.update_hovered_pixel(x, y)
+        self.dispatch_event(
+            "on_pixel_hover", self.hovered_pixel.x, self.hovered_pixel.y
+        )
+
+    def update_hovered_pixel(self, x, y):
+        """
+        Update hovered pixel based on mouse coordinates.
+        This is used for displaying pixel values in the UI and for copying pixel data to clipboard.
+        """
         # TODO: this duplicates crop selection logic - to refactor
         texture = self.animation.main_texture
         size = Vec2(texture.width, texture.height)
         offset = Vec2(texture.width / 2, texture.height / 2)
-        c = ~self.model @ Vec4(x, y, 0.0, 1.0)
-        c = Vec2(c.x, c.y) + offset
-        if 0 <= c.x < size.x and 0 <= c.y < size.y:
+        v = ~self.model @ Vec4(x, y, 0.0, 1.0)
+        v = Vec2(v.x, v.y) + offset
+        if 0 <= v.x < size.x and 0 <= v.y < size.y:
             active_size = Vec2(
                 self.animation.active_texture.width,
                 self.animation.active_texture.height,
             )
-            c = change_coords_resolution(
-                coords=c,
+            v = change_coords_resolution(
+                coords=v,
                 from_size=size,
                 to_size=active_size,
                 round_pixels=False,
             )
-            c = Vec2(round(c.x - 0.5), round(c.y - 0.5)).clamp(Vec2(0, 0), active_size)
-            self.dispatch_event("on_pixel_hover", c.x, active_size.y - 1 - c.y)
+            v = Vec2(round(v.x - 0.5), round(v.y - 0.5)).clamp(Vec2(0, 0), active_size)
+            self.hovered_pixel = Vec2(v.x, active_size.y - 1 - v.y)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if scroll_y > 0:
@@ -303,13 +315,33 @@ class FrameView(EventDispatcher):
                 self.animation.go_previous()
             if symbol == pyglet.window.key.E:
                 self.animation.go_end()
+        if (
+            pyglet.window.key.MOD_SHIFT & modifiers
+            or pyglet.window.key.MOD_ALT & modifiers
+        ):
+            # We don't want to interfere with Shift+X/C from the main context
+            pass
         else:
             if symbol == pyglet.window.key.X:
                 self.animation.next_source()
                 self.dispatch_event("on_source_change", self.animation.active_source)
+
+                self.update_hovered_pixel(
+                    self.cursor_translation.x, self.cursor_translation.y
+                )
+                self.dispatch_event(
+                    "on_pixel_hover", self.hovered_pixel.x, self.hovered_pixel.y
+                )
             if symbol == pyglet.window.key.Z:
                 self.animation.previous_source()
                 self.dispatch_event("on_source_change", self.animation.active_source)
+
+                self.update_hovered_pixel(
+                    self.cursor_translation.x, self.cursor_translation.y
+                )
+                self.dispatch_event(
+                    "on_pixel_hover", self.hovered_pixel.x, self.hovered_pixel.y
+                )
 
         number = KEY_TO_NUMBER.get(symbol, None)
         if number is not None:
