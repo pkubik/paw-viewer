@@ -90,7 +90,7 @@ class ViewerWindow(pyglet.window.Window):
 
         # Set up scalar widgets column
         self.scalar_widget_padding = padding = 4
-        font_size = 14
+        font_size = 15
         self.column = ColumnLayout(
             x=8,
             y=self.height - padding,
@@ -141,7 +141,7 @@ class ViewerWindow(pyglet.window.Window):
                 batch=self.batch,
                 group=self.overlay_group,
                 padding=padding,
-                font_size=font_size - 2,
+                font_size=font_size - 1,
                 format_string=f" {c}: {{:g}}",
             )
             self.column.add_widget(channel_scalar)
@@ -153,7 +153,7 @@ class ViewerWindow(pyglet.window.Window):
             batch=self.batch,
             group=self.overlay_group,
             padding=padding,
-            font_size=font_size - 2,
+            font_size=font_size - 1,
             format_string="X: {:d}",
         )
         self.column.add_widget(self.x_scalar)
