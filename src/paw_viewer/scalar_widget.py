@@ -43,6 +43,29 @@ class ScalarWidget(EventDispatcher):
         self.is_dragged = False
         self.register_event_type("on_change")
 
+    @staticmethod
+    def static_scalar(
+        value: float,
+        window: pyglet.window.BaseWindow,
+        batch: pyglet.graphics.Batch,
+        group: pyglet.graphics.Group,
+        padding=4,
+        font_size=16,
+        format_string="{}",
+    ):
+        """A quick and hacky way to display a scalar value without needing to handle the on_change event."""
+        return ScalarWidget(
+            initial_value=value,
+            value_step=0.0,
+            window=window,
+            batch=batch,
+            group=group,
+            min_value=value,
+            format_string=format_string,
+            padding=padding,
+            font_size=font_size,
+        )
+
     def update_geometry(self, x, y, **kwargs):
         self.label.x = x + self.padding
         self.label.y = y + self.padding

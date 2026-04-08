@@ -76,6 +76,9 @@ HELP_HTML = (
             ("CTRL+X", "Copy region coordinates to clipboard"),
             ("CTRL+C", "Copy cropped image to clipboard"),
             ("CTRL+N", "Save cropped region as .npy"),
+            ("SHIFT+Z", "Copy hovered pixel coordinates as Y, X"),
+            ("SHIFT+X", "Copy hovered pixel coordinates as X, Y"),
+            ("SHIFT+C", "Copy hovered pixel RGBA values"),
         ],
     )
     + format_section(

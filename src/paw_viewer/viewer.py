@@ -89,8 +89,8 @@ class ViewerWindow(pyglet.window.Window):
         )
 
         # Set up scalar widgets column
-        self.scalar_widget_padding = padding = 8
-        font_size = 16
+        self.scalar_widget_padding = padding = 4
+        font_size = 15
         self.column = ColumnLayout(
             x=8,
             y=self.height - padding,
@@ -132,6 +132,54 @@ class ViewerWindow(pyglet.window.Window):
         @self.gamma.event
         def on_change(value):
             self.animation.gamma = value
+
+        self.channel_scalars = {}
+        for c in "RGBA":
+            channel_scalar = ScalarWidget.static_scalar(
+                value=float("nan"),
+                window=self,
+                batch=self.batch,
+                group=self.overlay_group,
+                padding=padding,
+                font_size=font_size - 1,
+                format_string=f" {c}: {{:g}}",
+            )
+            self.column.add_widget(channel_scalar)
+            self.channel_scalars[c] = channel_scalar
+
+        self.x_scalar = ScalarWidget.static_scalar(
+            value=0,
+            window=self,
+            batch=self.batch,
+            group=self.overlay_group,
+            padding=padding,
+            font_size=font_size - 1,
+            format_string="X: {:d}",
+        )
+        self.column.add_widget(self.x_scalar)
+
+        self.y_scalar = ScalarWidget.static_scalar(
+            value=0,
+            window=self,
+            batch=self.batch,
+            group=self.overlay_group,
+            padding=padding,
+            font_size=font_size,
+            format_string="Y: {:d}",
+        )
+        self.column.add_widget(self.y_scalar)
+
+        @self.frame_view.event
+        def on_pixel_hover(x, y):
+            self.x_scalar.value = x
+            self.x_scalar.update_label()
+            self.y_scalar.value = y
+            self.y_scalar.update_label()
+
+            values = self.animation.frames[self.animation.frame_index][y, x]
+            for scalar, value in zip(self.channel_scalars.values(), values):
+                scalar.value = value
+                scalar.update_label()
 
         # Set up source switcher
         if len(self.animation.names) > 1:
@@ -258,6 +306,31 @@ class ViewerWindow(pyglet.window.Window):
                     print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:
                 self.close()
+
+        if pyglet.window.key.MOD_SHIFT & modifiers:
+            if symbol == pyglet.window.key.Z:
+                yx = self.frame_view.hovered_pixel
+
+                yx_str = f"{int(yx.y)}, {int(yx.x)}"
+                print(f"YX: {yx_str}")
+                self.set_clipboard_text(yx_str)
+
+            if symbol == pyglet.window.key.X:
+                yx = self.frame_view.hovered_pixel
+
+                xy_str = f"{int(yx.x)}, {int(yx.y)}"
+                print(f"XY: {xy_str}")
+                self.set_clipboard_text(xy_str)
+
+            if symbol == pyglet.window.key.C:
+                yx = self.frame_view.hovered_pixel
+                y = int(yx.y)
+                x = int(yx.x)
+
+                values = self.animation.frames[self.animation.frame_index][y, x]
+                values_str = ", ".join(f"{v:g}" for v in values)
+                print(f"RGBA: {values_str}")
+                self.set_clipboard_text(values_str)
 
         if symbol == pyglet.window.key.B:
             if modifiers & pyglet.window.key.MOD_SHIFT:
