@@ -308,6 +308,13 @@ class ViewerWindow(pyglet.window.Window):
                 self.close()
 
         if pyglet.window.key.MOD_SHIFT & modifiers:
+            if symbol == pyglet.window.key.Z:
+                yx = self.frame_view.hovered_pixel
+
+                yx_str = f"{int(yx.y)}, {int(yx.x)}"
+                print(f"YX: {yx_str}")
+                self.set_clipboard_text(yx_str)
+
             if symbol == pyglet.window.key.X:
                 yx = self.frame_view.hovered_pixel
 
