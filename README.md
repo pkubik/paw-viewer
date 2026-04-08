@@ -133,6 +133,9 @@ That's especially useful if you'd like to format your crop definitions in a spec
 | **CTRL+X**                    | Copy cropped region coordinates to clipboard as JSON |
 | **CTRL+C**                    | Copy cropped image region to clipboard |
 | **CTRL+N**                    | Save croppped region as numpy array (.npy) |
+| **SHIFT+Z**                   | Copy hovered pixel coordinates as `Y, X` |
+| **SHIFT+X**                   | Copy hovered pixel coordinates as `X, Y` |
+| **SHIFT+C**                   | Copy hovered pixel RGBA values |
 | Click/drag on the slider      | Select frame       |
 | Right-click on the slider     | Select time range  |
 | **CTRL+Q**                    | Quit               |
