@@ -141,8 +141,8 @@ class ViewerWindow(pyglet.window.Window):
                 batch=self.batch,
                 group=self.overlay_group,
                 padding=padding,
-                font_size=font_size,
-                format_string=f"{c}: {{:g}}",
+                font_size=font_size - 2,
+                format_string=f" {c}: {{:g}}",
             )
             self.column.add_widget(channel_scalar)
             self.channel_scalars[c] = channel_scalar
@@ -153,7 +153,7 @@ class ViewerWindow(pyglet.window.Window):
             batch=self.batch,
             group=self.overlay_group,
             padding=padding,
-            font_size=font_size,
+            font_size=font_size - 2,
             format_string="X: {:d}",
         )
         self.column.add_widget(self.x_scalar)
