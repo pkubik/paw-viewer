@@ -301,7 +301,7 @@ class ViewerWindow(pyglet.window.Window):
                         output_path,
                         data,
                     )
-                    print(f"Saved crop npy as {output_path}")
+                    print(f"Saved crop npy as {output_path.absolute()}")
                 else:
                     print("Nothing to save - no selection")
             if symbol == pyglet.window.key.Q:

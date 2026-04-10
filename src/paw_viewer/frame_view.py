@@ -264,9 +264,6 @@ class FrameView(EventDispatcher):
         self.cursor_translation = Vec3(x, y, 0)
 
         self.update_hovered_pixel(x, y)
-        self.dispatch_event(
-            "on_pixel_hover", self.hovered_pixel.x, self.hovered_pixel.y
-        )
 
     def update_hovered_pixel(self, x, y):
         """
@@ -292,6 +289,10 @@ class FrameView(EventDispatcher):
             )
             v = Vec2(round(v.x - 0.5), round(v.y - 0.5)).clamp(Vec2(0, 0), active_size)
             self.hovered_pixel = Vec2(v.x, active_size.y - 1 - v.y)
+
+            self.dispatch_event(
+                "on_pixel_hover", self.hovered_pixel.x, self.hovered_pixel.y
+            )
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if scroll_y > 0:
@@ -329,18 +330,12 @@ class FrameView(EventDispatcher):
                 self.update_hovered_pixel(
                     self.cursor_translation.x, self.cursor_translation.y
                 )
-                self.dispatch_event(
-                    "on_pixel_hover", self.hovered_pixel.x, self.hovered_pixel.y
-                )
             if symbol == pyglet.window.key.Z:
                 self.animation.previous_source()
                 self.dispatch_event("on_source_change", self.animation.active_source)
 
                 self.update_hovered_pixel(
                     self.cursor_translation.x, self.cursor_translation.y
-                )
-                self.dispatch_event(
-                    "on_pixel_hover", self.hovered_pixel.x, self.hovered_pixel.y
                 )
 
         number = KEY_TO_NUMBER.get(symbol, None)
@@ -357,6 +352,9 @@ class FrameView(EventDispatcher):
             index = number - 1  # convert to zero-based index
             self.animation.active_source = index
             self.dispatch_event("on_source_change", self.animation.active_source)
+            self.update_hovered_pixel(
+                self.cursor_translation.x, self.cursor_translation.y
+            )
 
         if symbol == pyglet.window.key.SPACE:
             self.animation.toggle()
